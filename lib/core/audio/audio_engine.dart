@@ -1,7 +1,15 @@
-import 'dart:typed_data';
+import 'dart:async';
+import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'sound_synthesizer.dart';
 
+/// Plays synthesized instrument sounds.
+///
+/// Sounds are generated once, written to a temporary WAV file and played from that file.
+/// Android's low-latency mode (SoundPool) cannot play in-memory bytes, but it loads a file
+/// once and keeps it in memory, so repeat taps start immediately.
 class AudioEngine {
   static final AudioEngine _instance = AudioEngine._internal();
   factory AudioEngine() => _instance;
@@ -11,29 +19,27 @@ class AudioEngine {
   final List<AudioPlayer> _players = [];
   int _currentPlayerIndex = 0;
 
-  final Map<int, Uint8List> _pianoCache = {};
-  final Map<int, Uint8List> _fluteCache = {};
-  final Map<int, Uint8List> _guitarCache = {};
-  final Map<int, Uint8List> _ukuleleCache = {};
-  final Map<int, Uint8List> _xylophoneCache = {};
-  final Map<int, Uint8List> _sitarCache = {};
-  final Map<int, Uint8List> _harmoniumCache = {};
-  final Map<int, Uint8List> _violinCache = {};
-  final Map<String, Uint8List> _drumPadCache = {};
-  final Map<String, Uint8List> _tablaCache = {};
-  final Map<String, Uint8List> _dholakCache = {};
-  final Map<String, Uint8List> _djLoopCache = {};
+  /// Sound key -> generated WAV file on disk.
+  final Map<String, String> _soundFiles = {};
+  final Map<String, Future<String?>> _pendingSoundFiles = {};
+  Future<Directory>? _soundDirectory;
+
   String? _djLoopCacheContext;
-  final Map<int, Uint8List> _droneCache = {};
   AudioPlayer? _dronePlayer;
 
-  bool _isInitialized = false;
+  Future<void>? _initialization;
 
-  Future<void> initialize() async {
-    if (_isInitialized) return;
+  /// Where generated sounds are written. Tests point this at a scratch directory.
+  @visibleForTesting
+  static Future<Directory> Function() baseDirectoryProvider = getTemporaryDirectory;
 
+  /// Safe to call many times; work happens once. Not awaited at startup so the first frame
+  /// is not held up by creating players.
+  Future<void> initialize() => _initialization ??= _initialize();
+
+  Future<void> _initialize() async {
     try {
-      AudioPlayer.global.setAudioContext(
+      await AudioPlayer.global.setAudioContext(
         AudioContext(
           android: const AudioContextAndroid(
             audioFocus: AndroidAudioFocus.none,
@@ -43,173 +49,114 @@ class AudioEngine {
           ),
         ),
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('AudioEngine: audio context not set: $e');
+    }
 
-    try {
-      for (int i = 0; i < _poolSize; i++) {
-        final player = AudioPlayer();
+    final players = await Future.wait(List.generate(_poolSize, (_) async {
+      final player = AudioPlayer();
+      try {
         await player.setPlayerMode(PlayerMode.lowLatency);
-        _players.add(player);
+      } catch (e) {
+        debugPrint('AudioEngine: low-latency mode unavailable: $e');
       }
-    } catch (_) {}
-
-    _isInitialized = true;
+      return player;
+    }));
+    _players.addAll(players);
   }
 
-  Future<void> playPianoNote(int midiNote) async {
-    if (!_isInitialized) await initialize();
-    Uint8List? bytes = _pianoCache[midiNote];
-    if (bytes == null) {
-      double freq = SoundSynthesizer.midiToFrequency(midiNote);
-      bytes = SoundSynthesizer.generatePianoWav(freq);
-      _pianoCache[midiNote] = bytes;
-    }
-    await _playWavFromBytes(bytes);
+  Future<void> playPianoNote(int midiNote) => _play(
+        'piano_$midiNote',
+        () => SoundSynthesizer.generatePianoWav(SoundSynthesizer.midiToFrequency(midiNote)),
+      );
+
+  Future<void> playFluteNote(int midiNote, {double vibratoAmount = 0.0}) {
+    // Vibrato changes the waveform, so it is part of the key (in 10% steps).
+    final vibratoStep = (vibratoAmount.clamp(0.0, 1.0) * 10).round();
+    return _play(
+      'flute_${midiNote}_v$vibratoStep',
+      () => SoundSynthesizer.generateFluteWav(SoundSynthesizer.midiToFrequency(midiNote), vibratoAmount: vibratoStep / 10),
+    );
   }
 
-  Future<void> playFluteNote(int midiNote, {double vibratoAmount = 0.0}) async {
-    if (!_isInitialized) await initialize();
-    Uint8List? bytes = _fluteCache[midiNote];
-    if (bytes == null) {
-      double freq = SoundSynthesizer.midiToFrequency(midiNote);
-      bytes = SoundSynthesizer.generateFluteWav(freq, vibratoAmount: vibratoAmount);
-      _fluteCache[midiNote] = bytes;
-    }
-    await _playWavFromBytes(bytes);
+  Future<void> playUkuleleNote(int midiNote) => _play(
+        'ukulele_$midiNote',
+        () => SoundSynthesizer.generateUkuleleWav(SoundSynthesizer.midiToFrequency(midiNote)),
+      );
+
+  Future<void> playXylophoneNote(int midiNote) => _play(
+        'xylophone_$midiNote',
+        () => SoundSynthesizer.generateXylophoneWav(SoundSynthesizer.midiToFrequency(midiNote)),
+      );
+
+  Future<void> playSitarNote(int midiNote, {int bendSemitones = 0}) {
+    final targetMidi = midiNote + bendSemitones;
+    return _play(
+      'sitar_$targetMidi',
+      () => SoundSynthesizer.generateSitarWav(SoundSynthesizer.midiToFrequency(targetMidi)),
+    );
   }
 
-  Future<void> playUkuleleNote(int midiNote) async {
-    if (!_isInitialized) await initialize();
-    Uint8List? bytes = _ukuleleCache[midiNote];
-    if (bytes == null) {
-      double freq = SoundSynthesizer.midiToFrequency(midiNote);
-      bytes = SoundSynthesizer.generateUkuleleWav(freq);
-      _ukuleleCache[midiNote] = bytes;
-    }
-    await _playWavFromBytes(bytes);
-  }
+  Future<void> playGuitarNote(int midiNote) => _play(
+        'guitar_$midiNote',
+        () => SoundSynthesizer.generateGuitarWav(SoundSynthesizer.midiToFrequency(midiNote)),
+      );
 
-  Future<void> playXylophoneNote(int midiNote) async {
-    if (!_isInitialized) await initialize();
-    Uint8List? bytes = _xylophoneCache[midiNote];
-    if (bytes == null) {
-      double freq = SoundSynthesizer.midiToFrequency(midiNote);
-      bytes = SoundSynthesizer.generateXylophoneWav(freq);
-      _xylophoneCache[midiNote] = bytes;
-    }
-    await _playWavFromBytes(bytes);
-  }
+  Future<void> playHarmoniumNote(int midiNote) => _play(
+        'harmonium_$midiNote',
+        () => SoundSynthesizer.generateHarmoniumWav(SoundSynthesizer.midiToFrequency(midiNote)),
+      );
 
-  Future<void> playSitarNote(int midiNote, {int bendSemitones = 0}) async {
-    if (!_isInitialized) await initialize();
-    int targetMidi = midiNote + bendSemitones;
-    Uint8List? bytes = _sitarCache[targetMidi];
-    if (bytes == null) {
-      double freq = SoundSynthesizer.midiToFrequency(targetMidi);
-      bytes = SoundSynthesizer.generateSitarWav(freq);
-      _sitarCache[targetMidi] = bytes;
-    }
-    await _playWavFromBytes(bytes);
-  }
+  Future<void> playViolinNote(int midiNote) => _play(
+        'violin_$midiNote',
+        () => SoundSynthesizer.generateViolinWav(SoundSynthesizer.midiToFrequency(midiNote)),
+      );
 
-  Future<void> playGuitarNote(int midiNote) async {
-    if (!_isInitialized) await initialize();
-    Uint8List? bytes = _guitarCache[midiNote];
-    if (bytes == null) {
-      double freq = SoundSynthesizer.midiToFrequency(midiNote);
-      bytes = SoundSynthesizer.generateGuitarWav(freq);
-      _guitarCache[midiNote] = bytes;
-    }
-    await _playWavFromBytes(bytes);
-  }
+  Future<void> playDrumPad(String padType, {String kit = 'classic'}) => _play(
+        'drum_${kit}_${padType.toLowerCase()}',
+        () => SoundSynthesizer.generateDrumPadWav(padType, kit: kit),
+      );
 
-  Future<void> playHarmoniumNote(int midiNote) async {
-    if (!_isInitialized) await initialize();
-    Uint8List? bytes = _harmoniumCache[midiNote];
-    if (bytes == null) {
-      double freq = SoundSynthesizer.midiToFrequency(midiNote);
-      bytes = SoundSynthesizer.generateHarmoniumWav(freq);
-      _harmoniumCache[midiNote] = bytes;
-    }
-    await _playWavFromBytes(bytes);
-  }
-
-  Future<void> playViolinNote(int midiNote) async {
-    if (!_isInitialized) await initialize();
-    Uint8List? bytes = _violinCache[midiNote];
-    if (bytes == null) {
-      double freq = SoundSynthesizer.midiToFrequency(midiNote);
-      bytes = SoundSynthesizer.generateViolinWav(freq);
-      _violinCache[midiNote] = bytes;
-    }
-    await _playWavFromBytes(bytes);
-  }
-
-  Future<void> playDrumPad(String padType, {String kit = 'classic'}) async {
-    if (!_isInitialized) await initialize();
-    final key = '${kit}_${padType.toLowerCase()}';
-    Uint8List? bytes = _drumPadCache[key];
-    if (bytes == null) {
-      bytes = SoundSynthesizer.generateDrumPadWav(padType, kit: kit);
-      _drumPadCache[key] = bytes;
-    }
-    await _playWavFromBytes(bytes);
-  }
-
-  Future<void> playTablaBol(String bol) async {
-    if (!_isInitialized) await initialize();
+  Future<void> playTablaBol(String bol) {
     final key = bol.toLowerCase();
-    Uint8List? bytes = _tablaCache[key];
-    if (bytes == null) {
-      bytes = SoundSynthesizer.generateTablaBolWav(key);
-      _tablaCache[key] = bytes;
-    }
-    await _playWavFromBytes(bytes);
+    return _play('tabla_$key', () => SoundSynthesizer.generateTablaBolWav(key));
   }
 
-  Future<void> playDholakStroke(String stroke) async {
-    if (!_isInitialized) await initialize();
+  Future<void> playDholakStroke(String stroke) {
     final key = stroke.toLowerCase();
-    Uint8List? bytes = _dholakCache[key];
-    if (bytes == null) {
-      bytes = SoundSynthesizer.generateDholakWav(key);
-      _dholakCache[key] = bytes;
-    }
-    await _playWavFromBytes(bytes);
+    return _play('dholak_$key', () => SoundSynthesizer.generateDholakWav(key));
   }
 
-  Future<void> playDJLoopTrack(String trackId, {double filterCutoff = 1.0, int bpm = 124, String packId = 'electro_house'}) async {
-    if (!_isInitialized) await initialize();
-    // Loops are one bar long, so a BPM or pack change invalidates every cached loop.
+  Future<void> playDJLoopTrack(String trackId, {double filterCutoff = 1.0, int bpm = 124, String packId = 'electro_house'}) {
+    // Loops are one bar long, so a BPM or pack change makes every generated loop obsolete.
     final context = '${packId}_$bpm';
     if (context != _djLoopCacheContext) {
-      _djLoopCache.clear();
+      _forgetSounds('dj_');
       _djLoopCacheContext = context;
     }
     final double roundedCutoff = (filterCutoff * 10).round() / 10;
-    final key = '${trackId.toLowerCase()}_${(roundedCutoff * 10).round()}';
-    Uint8List? bytes = _djLoopCache[key];
-    if (bytes == null) {
-      bytes = SoundSynthesizer.generateDJLoopWav(trackId, filterCutoff: roundedCutoff, bpm: bpm, packId: packId);
-      _djLoopCache[key] = bytes;
-    }
-    await _playWavFromBytes(bytes);
+    return _play(
+      'dj_${context}_${trackId.toLowerCase()}_${(roundedCutoff * 10).round()}',
+      () => SoundSynthesizer.generateDJLoopWav(trackId, filterCutoff: roundedCutoff, bpm: bpm, packId: packId),
+    );
   }
 
   /// Starts a continuous, looping drone on [midiNote], replacing any drone already playing.
   /// It uses its own player so keyboard notes never cut it off.
   Future<void> startDrone(int midiNote) async {
-    Uint8List? bytes = _droneCache[midiNote];
-    if (bytes == null) {
-      bytes = SoundSynthesizer.generateHarmoniumDroneWav(SoundSynthesizer.midiToFrequency(midiNote));
-      _droneCache[midiNote] = bytes;
-    }
+    final path = await _soundFile(
+      'drone_$midiNote',
+      () => SoundSynthesizer.generateHarmoniumDroneWav(SoundSynthesizer.midiToFrequency(midiNote)),
+    );
+    if (path == null) return;
     try {
       final player = _dronePlayer ??= AudioPlayer();
       await player.stop();
       await player.setReleaseMode(ReleaseMode.loop);
-      await player.play(BytesSource(bytes));
-    } catch (_) {}
+      await player.play(DeviceFileSource(path));
+    } catch (e) {
+      debugPrint('AudioEngine: drone failed: $e');
+    }
   }
 
   Future<void> stopDrone() async {
@@ -223,15 +170,62 @@ class AudioEngine {
     await playTablaBol(key);
   }
 
-  Future<void> _playWavFromBytes(Uint8List bytes) async {
-    if (_players.isEmpty) return;
+  Future<void> _play(String key, Uint8List Function() generate) async {
+    await initialize();
+    final path = await _soundFile(key, generate);
+    if (path == null || _players.isEmpty) return;
+
     final player = _players[_currentPlayerIndex];
-    _currentPlayerIndex = (_currentPlayerIndex + 1) % _poolSize;
+    _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.length;
 
     try {
       await player.stop();
-      await player.play(BytesSource(bytes));
-    } catch (_) {}
+      await player.play(DeviceFileSource(path));
+    } catch (e) {
+      debugPrint('AudioEngine: could not play $key: $e');
+    }
+  }
+
+  /// Path of the WAV file for [key], generating and writing it on first use.
+  /// Concurrent requests for the same sound share one write.
+  Future<String?> _soundFile(String key, Uint8List Function() generate) {
+    final existing = _soundFiles[key];
+    if (existing != null) return Future.value(existing);
+    // Block body: returning the removed Future from whenComplete would make it wait on itself.
+    return _pendingSoundFiles[key] ??= _writeSoundFile(key, generate).whenComplete(() {
+      _pendingSoundFiles.remove(key);
+    });
+  }
+
+  Future<String?> _writeSoundFile(String key, Uint8List Function() generate) async {
+    try {
+      final directory = await (_soundDirectory ??= _prepareSoundDirectory());
+      final file = File('${directory.path}/$key.wav');
+      await file.writeAsBytes(generate(), flush: true);
+      _soundFiles[key] = file.path;
+      return file.path;
+    } catch (e) {
+      debugPrint('AudioEngine: could not prepare $key: $e');
+      return null;
+    }
+  }
+
+  /// A fresh directory each launch, so sounds always match the current synthesizer.
+  Future<Directory> _prepareSoundDirectory() async {
+    final base = await baseDirectoryProvider();
+    final directory = Directory('${base.path}/surjam_sounds');
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
+    }
+    return directory.create(recursive: true);
+  }
+
+  void _forgetSounds(String keyPrefix) {
+    final keys = _soundFiles.keys.where((k) => k.startsWith(keyPrefix)).toList();
+    for (final key in keys) {
+      final path = _soundFiles.remove(key)!;
+      File(path).delete().catchError((_) => File(path));
+    }
   }
 
   void dispose() {
@@ -241,18 +235,6 @@ class AudioEngine {
     _players.clear();
     _dronePlayer?.dispose();
     _dronePlayer = null;
-    _droneCache.clear();
-    _pianoCache.clear();
-    _sitarCache.clear();
-    _fluteCache.clear();
-    _ukuleleCache.clear();
-    _xylophoneCache.clear();
-    _guitarCache.clear();
-    _harmoniumCache.clear();
-    _violinCache.clear();
-    _drumPadCache.clear();
-    _tablaCache.clear();
-    _dholakCache.clear();
-    _djLoopCache.clear();
+    _initialization = null;
   }
 }

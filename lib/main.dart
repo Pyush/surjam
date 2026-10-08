@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -29,10 +30,11 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
-  // Pre-initialize Core Services
+  // Only local settings are needed before the first frame. Audio players and the ads SDK
+  // (which can wait on the network for seconds) start in the background.
   await StorageService().initialize();
-  await AudioEngine().initialize();
-  await AdMobService().initialize();
+  unawaited(AudioEngine().initialize());
+  unawaited(AdMobService().initialize());
 
   runApp(const SurJamApp());
 }
