@@ -60,7 +60,8 @@ class _SitarFretboardWidgetState extends State<SitarFretboardWidget> {
 
   // --- 1. CHIKARI DRONES ---
   Widget _buildChikariBar(SitarProvider provider) {
-    final chikariNames = ['Pancham (Pa)', 'Chhoti Chikari (Sa\')', 'Badi Chikari (Sa\'\')'];
+    // Pancham, chhoti chikari and badi chikari; the section label names them.
+    final chikariNames = ['Pa', 'Sa\'', 'Sa\'\''];
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -82,7 +83,7 @@ class _SitarFretboardWidgetState extends State<SitarFretboardWidget> {
                 Icon(Icons.graphic_eq, color: AppColors.pianoGold, size: 14),
                 SizedBox(width: 4),
                 Text(
-                  'Chikari Drones',
+                  'Chikari',
                   style: TextStyle(color: AppColors.pianoGold, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -116,12 +117,21 @@ class _SitarFretboardWidgetState extends State<SitarFretboardWidget> {
                             height: isPlucked ? 3.0 : 1.5,
                             color: isPlucked ? AppColors.pianoGold : Colors.grey.shade400,
                           ),
-                          Text(
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            // Backing keeps the string line from striking through the label.
+                            child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            color: const Color(0xFF1C130C),
+                            child: Text(
                             chikariNames[idx],
+                            maxLines: 1,
                             style: TextStyle(
                               color: isPlucked ? Colors.white : Colors.white70,
-                              fontSize: 10,
+                              fontSize: 12,
                               fontWeight: isPlucked ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            ),
                             ),
                           ),
                         ],
@@ -221,10 +231,14 @@ class _SitarFretboardWidgetState extends State<SitarFretboardWidget> {
                         ),
                       ),
 
-                      // Swara Badge
+                      // Swara Badge (scaled to fit narrow portrait columns)
                       Positioned(
                         top: 12,
-                        child: Container(
+                        left: 1,
+                        right: 9,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
                           decoration: BoxDecoration(
                             color: inRaga
@@ -242,6 +256,7 @@ class _SitarFretboardWidgetState extends State<SitarFretboardWidget> {
                               fontSize: 11,
                               fontWeight: inRaga ? FontWeight.bold : FontWeight.normal,
                             ),
+                          ),
                           ),
                         ),
                       ),
@@ -265,19 +280,24 @@ class _SitarFretboardWidgetState extends State<SitarFretboardWidget> {
                       if (isActive && provider.bendSemitones > 0)
                         Positioned(
                           bottom: 12,
-                          child: Container(
+                          left: 1,
+                          right: 9,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: AppColors.primaryCyan,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              '+${provider.bendSemitones} Semitone',
+                              '+${provider.bendSemitones}',
                               style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
+                            ),
                             ),
                           ),
                         ),
@@ -316,7 +336,7 @@ class _SitarFretboardWidgetState extends State<SitarFretboardWidget> {
                 Icon(Icons.waves, color: Colors.tealAccent, size: 14),
                 SizedBox(width: 4),
                 Text(
-                  'Tarab Resonance',
+                  'Tarab',
                   style: TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -352,12 +372,21 @@ class _SitarFretboardWidgetState extends State<SitarFretboardWidget> {
                             width: 1.0,
                             color: isPlucked ? Colors.tealAccent : Colors.grey.shade600,
                           ),
-                          Text(
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            // Backing keeps the string line from striking through the label.
+                            child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            color: const Color(0xFF1C130C),
+                            child: Text(
                             noteLabel,
+                            maxLines: 1,
                             style: TextStyle(
                               color: isPlucked ? Colors.white : Colors.white60,
                               fontSize: 9,
                               fontWeight: isPlucked ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            ),
                             ),
                           ),
                         ],

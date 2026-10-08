@@ -67,7 +67,7 @@ class BansuriFluteWidget extends StatelessWidget {
                         children: [
                           // Red Thread Bindings (Rassi) at head, mid, tail
                           Positioned(left: 30, top: 0, bottom: 0, width: 12, child: _buildThreadBinding()),
-                          Positioned(left: 120, top: 0, bottom: 0, width: 8, child: _buildThreadBinding()),
+                          Positioned(left: 86, top: 0, bottom: 0, width: 8, child: _buildThreadBinding()),
                           Positioned(right: 30, top: 0, bottom: 0, width: 12, child: _buildThreadBinding()),
 
                           // Blow Hole (Embouchure)
@@ -94,19 +94,24 @@ class BansuriFluteWidget extends StatelessWidget {
                             ),
                           ),
 
-                          // 6 Tone Holes Row
+                          // 6 Tone Holes Row: each hole's touch area is the full flute height
+                          // of its slice, so the small holes are still easy to hit.
                           Positioned(
-                            left: 140,
-                            right: 50,
+                            left: 100,
+                            right: 46,
+                            top: 0,
+                            bottom: 0,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: List.generate(6, (holeIdx) {
                                 double coverage = coverages[holeIdx];
                                 return Expanded(
+                                  child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => provider.toggleHoleCoverage(holeIdx),
+                                  child: Center(
                                   child: FittedBox(
                                   fit: BoxFit.scaleDown,
-                                  child: GestureDetector(
-                                  onTap: () => provider.toggleHoleCoverage(holeIdx),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -121,6 +126,7 @@ class BansuriFluteWidget extends StatelessWidget {
                                       const SizedBox(height: 4),
                                       _buildHoleWidget(coverage, provider.isPlaying),
                                     ],
+                                  ),
                                   ),
                                   ),
                                   ),

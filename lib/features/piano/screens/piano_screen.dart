@@ -96,9 +96,10 @@ class PianoScreen extends StatelessWidget {
         children: [
             // Octave Selector
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Octave: ', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 13)),
                 IconButton(
+                  tooltip: 'Octave down',
                   icon: const Icon(Icons.remove_circle_outline, color: AppColors.primaryCyan, size: 22),
                   onPressed: provider.octave > 2 ? () => provider.setOctave(provider.octave - 1) : null,
                 ),
@@ -115,10 +116,37 @@ class PianoScreen extends StatelessWidget {
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Octave up',
                   icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryCyan, size: 22),
                   onPressed: provider.octave < 6 ? () => provider.setOctave(provider.octave + 1) : null,
                 ),
               ],
+            ),
+
+            // Record Button
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: provider.isRecording ? AppColors.recordRed : Colors.white10,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: Icon(
+                provider.isRecording ? Icons.stop_circle_rounded : Icons.fiber_manual_record_rounded,
+                color: provider.isRecording ? Colors.white : Colors.redAccent,
+                size: 20,
+              ),
+              label: Text(
+                provider.isRecording ? 'STOP' : 'REC',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              onPressed: () {
+                if (provider.isRecording) {
+                  _showSaveRecordingDialog(context, provider);
+                } else {
+                  provider.startRecording();
+                }
+              },
             ),
 
             // Sustain Pedal Toggle
@@ -164,31 +192,6 @@ class PianoScreen extends StatelessWidget {
               ),
             ),
 
-            // Record Button
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: provider.isRecording ? AppColors.recordRed : Colors.white10,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: Icon(
-                provider.isRecording ? Icons.stop_circle_rounded : Icons.fiber_manual_record_rounded,
-                color: provider.isRecording ? Colors.white : Colors.redAccent,
-                size: 20,
-              ),
-              label: Text(
-                provider.isRecording ? 'STOP' : 'REC',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-              onPressed: () {
-                if (provider.isRecording) {
-                  _showSaveRecordingDialog(context, provider);
-                } else {
-                  provider.startRecording();
-                }
-              },
-            ),
         ],
       ),
     );

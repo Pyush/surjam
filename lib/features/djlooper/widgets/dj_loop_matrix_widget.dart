@@ -30,13 +30,21 @@ class DJLoopMatrixWidget extends StatelessWidget {
               border: Border.all(color: Colors.white12, width: 1.5),
               boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4))],
             ),
-            child: GridView.builder(
+            // Pads fill the panel: 2 x 4 on tall screens, 4 x 2 on wide ones.
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+              const double spacing = 10;
+              final int columns = constraints.maxWidth > constraints.maxHeight ? 4 : 2;
+              final int rows = (tracks.length / columns).ceil();
+              final double padWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+              final double padHeight = (constraints.maxHeight - spacing * (rows - 1)) / rows;
+              return GridView.builder(
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                childAspectRatio: 1.1,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                childAspectRatio: padWidth / padHeight,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: spacing,
               ),
               itemCount: tracks.length,
               itemBuilder: (context, idx) {
@@ -109,6 +117,8 @@ class DJLoopMatrixWidget extends StatelessWidget {
                     ),
                   ),
                 );
+              },
+              );
               },
             ),
           ),

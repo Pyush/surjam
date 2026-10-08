@@ -13,7 +13,37 @@ class KeyboardWidget extends StatefulWidget {
 }
 
 class _KeyboardWidgetState extends State<KeyboardWidget> {
+  static const double _minWhiteKeyWidth = 44.0;
+  static const double _borderWidth = 1.5;
+
   final ScrollController _scrollController = ScrollController();
+  int? _scrolledLearnTarget;
+
+  // Keeps the next learn-mode note on screen when the keyboard is wider than the view.
+  void _scrollToLearnTarget(PianoProvider provider, List<PianoKeyModel> whiteKeys, double whiteKeyWidth, double viewWidth) {
+    final target = provider.targetLearnMidiNote;
+    if (target == null || target == _scrolledLearnTarget) return;
+    _scrolledLearnTarget = target;
+
+    // A black key sits on the boundary after its lower white neighbour.
+    final whiteIndex = whiteKeys.lastIndexWhere((k) => k.midiNote <= target);
+    if (whiteIndex < 0) return;
+    final keyCenter = (whiteIndex + (whiteKeys[whiteIndex].midiNote == target ? 0.5 : 1.0)) * whiteKeyWidth;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      final visibleStart = position.pixels;
+      final margin = whiteKeyWidth;
+      if (keyCenter < visibleStart + margin || keyCenter > visibleStart + viewWidth - margin) {
+        _scrollController.animateTo(
+          (keyCenter - viewWidth / 2).clamp(0.0, position.maxScrollExtent),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -36,14 +66,14 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double containerWidth = constraints.maxWidth;
+        // The keys live inside the border, so size them from the inner width.
+        final double containerWidth = constraints.maxWidth - 2 * _borderWidth;
         final double containerHeight = constraints.maxHeight;
 
-        // Calculate key dimensions for optimal touch target size
-        double whiteKeyWidth = (containerWidth / 14).clamp(42.0, 64.0);
-        if (whiteKeyWidth * 14 > containerWidth) {
-          whiteKeyWidth = containerWidth / 14;
-        }
+        // Both octaves fit when keys can be at least the minimum touch width (landscape);
+        // on narrow portrait screens keys keep that width and the keyboard scrolls.
+        final double whiteKeyWidth = (containerWidth / whiteKeys.length).clamp(_minWhiteKeyWidth, 64.0);
+        _scrollToLearnTarget(provider, whiteKeys, whiteKeyWidth, containerWidth);
 
         final double blackKeyWidth = whiteKeyWidth * 0.62;
         final double blackKeyHeight = containerHeight * 0.60;
@@ -52,7 +82,7 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
           decoration: BoxDecoration(
             color: const Color(0xFF12111A),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.darkCardBorder, width: 1.5),
+            border: Border.all(color: AppColors.darkCardBorder, width: _borderWidth),
             boxShadow: const [
               BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4)),
             ],
