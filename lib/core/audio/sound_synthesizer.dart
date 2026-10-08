@@ -179,6 +179,33 @@ class SoundSynthesizer {
     return data.buffer.asUint8List();
   }
 
+  /// Generates a sustained harmonium drone meant to be played on loop. The length is a
+  /// whole number of cycles of [frequency] (about 2 seconds) and the gentle bellows swell
+  /// completes exactly one cycle, so the loop point is seamless.
+  static Uint8List generateHarmoniumDroneWav(double targetFrequency) {
+    final int cycles = (2.0 * targetFrequency).round();
+    final int numSamples = (sampleRate * cycles / targetFrequency).round();
+    final double durationSeconds = numSamples / sampleRate;
+    // Retune by a tiny fraction of a cent so the cycles fit the whole-sample length exactly.
+    final double frequency = cycles / durationSeconds;
+    final ByteData data = ByteData(44 + numSamples * 2);
+    _writeWavHeader(data, numSamples, sampleRate);
+
+    for (int i = 0; i < numSamples; i++) {
+      double t = i / sampleRate;
+      double bellows = 0.9 + 0.1 * sin(2 * pi * t / durationSeconds);
+
+      double wave = 0.5 * sin(2 * pi * frequency * t) +
+                    0.3 * sin(2 * pi * frequency * 2 * t) +
+                    0.2 * sin(2 * pi * frequency * 3 * t) +
+                    0.1 * sin(2 * pi * frequency * 5 * t);
+
+      double sampleValue = (wave * bellows * 0.6).clamp(-1.0, 1.0);
+      data.setInt16(44 + i * 2, (sampleValue * 32767).toInt(), Endian.little);
+    }
+    return data.buffer.asUint8List();
+  }
+
   /// Generates Violin Bowed String PCM WAV bytes
   static Uint8List generateViolinWav(double frequency, {double durationSeconds = 1.2}) {
     final int numSamples = (sampleRate * durationSeconds).toInt();
@@ -201,13 +228,24 @@ class SoundSynthesizer {
     return data.buffer.asUint8List();
   }
 
-  /// Generates DJ Loop Launcher Track PCM WAV bytes with audio filter control
-  static Uint8List generateDJLoopWav(String trackId, {double filterCutoff = 1.0, double durationSeconds = 1.93}) {
-    final int numSamples = (sampleRate * durationSeconds).toInt();
+  /// Generates one bar (4 beats) of a DJ Loop Launcher track at [bpm], so loops
+  /// retriggered once per bar line up seamlessly. [packId] picks the pack's key
+  /// and timbre, and [filterCutoff] (0.0 to 1.0) drives a one-pole low-pass filter.
+  static Uint8List generateDJLoopWav(String trackId, {double filterCutoff = 1.0, int bpm = 124, String packId = 'electro_house'}) {
+    final double beat = 60.0 / bpm;
+    final double bar = beat * 4;
+    final int numSamples = (sampleRate * bar).toInt();
     final ByteData data = ByteData(44 + numSamples * 2);
     _writeWavHeader(data, numSamples, sampleRate);
 
     final Random rng = Random(42);
+    final bool isSynthwave = packId == 'synthwave_retro';
+    final bool isFusion = packId == 'indian_fusion';
+
+    // Cutoff 0.0 -> ~150 Hz, 1.0 -> filter bypassed.
+    final double cutoffHz = 150.0 * pow(2, filterCutoff * 7);
+    final double filterAlpha = 1 - exp(-2 * pi * cutoffHz / sampleRate);
+    double filtered = 0.0;
 
     for (int i = 0; i < numSamples; i++) {
       double t = i / sampleRate;
@@ -215,58 +253,110 @@ class SoundSynthesizer {
 
       switch (trackId.toLowerCase()) {
         case 'drums':
-          double kick = (t % 0.48 < 0.1) ? sin(2 * pi * (120 - 90 * ((t % 0.48) / 0.1)) * t) * exp(-8.0 * (t % 0.48)) * 0.9 : 0.0;
-          double snare = (t % 0.96 > 0.46 && t % 0.96 < 0.56) ? (rng.nextDouble() * 2 - 1) * exp(-15.0 * ((t % 0.96) - 0.46)) * 0.6 : 0.0;
+          // Kick on every beat, snare (or tabla "Ta" in the fusion pack) on beats 2 and 4.
+          double kt = t % beat;
+          double kickDrop = isFusion ? 60.0 : 90.0;
+          double kick = (kt < 0.1) ? sin(2 * pi * (120 - kickDrop * (kt / 0.1)) * kt) * exp(-8.0 * kt) * 0.9 : 0.0;
+          double st = (t % (2 * beat)) - beat;
+          double snare = 0.0;
+          if (st >= 0 && st < 0.15) {
+            snare = isFusion
+                ? sin(2 * pi * 520 * st) * exp(-18.0 * st) * 0.6
+                : (rng.nextDouble() * 2 - 1) * exp((isSynthwave ? -8.0 : -15.0) * st) * 0.6;
+          }
           sampleValue = kick + snare;
           break;
 
         case 'bass':
-          double bassFreq = (t < 0.96) ? 55.0 : 65.41;
+          // Root note changes halfway through the bar.
+          final List<double> roots = isSynthwave ? [55.0, 43.65] : (isFusion ? [65.41, 65.41] : [55.0, 65.41]);
+          double bassFreq = (t < 2 * beat) ? roots[0] : roots[1];
+          if (isFusion && (t % beat) >= beat / 2) bassFreq *= 2; // Octave bounce
           double sub = sin(2 * pi * bassFreq * t) * 0.7 + 0.3 * sin(2 * pi * bassFreq * 2 * t);
-          sampleValue = sub * exp(-0.5 * (t % 0.24));
+          sampleValue = sub * exp(-0.5 * (t % (beat / 2)));
           break;
 
         case 'chords':
-          double c = sin(2 * pi * 261.63 * t);
-          double e = sin(2 * pi * 329.63 * t);
-          double g = sin(2 * pi * 392.00 * t);
-          sampleValue = (c + e + g) * 0.28 * exp(-2.0 * (t % 0.48));
+          if (isFusion) {
+            // Tanpura-style Sa-Pa-Sa' drone with jawari harmonics.
+            double drone = 0.0;
+            for (final f in const [130.81, 196.0, 261.63]) {
+              drone += sin(2 * pi * f * t) + 0.3 * sin(2 * pi * f * 3 * t) + 0.15 * sin(2 * pi * f * 5 * t);
+            }
+            sampleValue = drone * 0.17 * exp(-0.6 * (t % (2 * beat)));
+          } else if (isSynthwave) {
+            // A minor pad swelling in every half bar.
+            double pad = sin(2 * pi * 220.0 * t) + sin(2 * pi * 261.63 * t) + sin(2 * pi * 329.63 * t);
+            sampleValue = pad * 0.25 * (1 - exp(-3.0 * (t % (2 * beat))));
+          } else {
+            double c = sin(2 * pi * 261.63 * t);
+            double e = sin(2 * pi * 329.63 * t);
+            double g = sin(2 * pi * 392.00 * t);
+            sampleValue = (c + e + g) * 0.28 * exp(-2.0 * (t % beat));
+          }
           break;
 
         case 'lead':
-          double step = (t * 8).floor() % 4;
-          double freq = 440.0 + step * 110.0;
-          sampleValue = sin(2 * pi * freq * t) * 0.5 * exp(-4.0 * (t % 0.12));
+          // Four-note 16th-note arpeggio.
+          int step = (t / (beat / 4)).floor() % 4;
+          double env = exp(-4.0 * (t % (beat / 4)));
+          if (isFusion) {
+            // Sargam pentatonic Sa Re Ga Pa with a sitar-like buzz.
+            double freq = const [261.63, 293.66, 329.63, 392.0][step];
+            sampleValue = (sin(2 * pi * freq * t) + 0.3 * sin(2 * pi * freq * 2 * t) + 0.15 * sin(2 * pi * freq * 5 * t)) * 0.4 * env;
+          } else if (isSynthwave) {
+            // Saw-like A minor arpeggio.
+            double freq = const [220.0, 261.63, 329.63, 440.0][step];
+            sampleValue = (sin(2 * pi * freq * t) + 0.5 * sin(2 * pi * freq * 2 * t) + 0.33 * sin(2 * pi * freq * 3 * t)) * 0.3 * env;
+          } else {
+            double freq = 440.0 + step * 110.0;
+            sampleValue = sin(2 * pi * freq * t) * 0.5 * env;
+          }
           break;
 
         case 'vocal':
-          double chopEnv = exp(-3.0 * (t % 0.48));
-          double vox = sin(2 * pi * 523.25 * t) + 0.5 * sin(2 * pi * 659.25 * t);
+          final List<double> voice = isSynthwave ? [440.0, 523.25] : (isFusion ? [523.25, 783.99] : [523.25, 659.25]);
+          double chopEnv = exp(-3.0 * (t % beat));
+          double vox = sin(2 * pi * voice[0] * t) + 0.5 * sin(2 * pi * voice[1] * t);
           sampleValue = vox * chopEnv * 0.45;
           break;
 
         case 'percussion':
-          double hat = (t % 0.24 > 0.10 && t % 0.24 < 0.18) ? (rng.nextDouble() * 2 - 1) * exp(-30.0 * ((t % 0.24) - 0.10)) * 0.4 : 0.0;
-          sampleValue = hat;
+          // Off-beat 16ths: hi-hats, or tabla "Na" in the fusion pack.
+          double ph = (t % (beat / 2)) - beat / 4;
+          if (ph >= 0 && ph < 0.08) {
+            sampleValue = isFusion
+                ? sin(2 * pi * 700 * ph) * exp(-25.0 * ph) * 0.45
+                : (rng.nextDouble() * 2 - 1) * exp(-30.0 * ph) * 0.4;
+          }
           break;
 
         case 'piano_stab':
-          double p1 = sin(2 * pi * 329.63 * t);
-          double p2 = sin(2 * pi * 440.00 * t);
-          sampleValue = (p1 + p2) * 0.4 * exp(-3.5 * (t % 0.96));
+          double env = exp(-3.5 * (t % (2 * beat)));
+          if (isFusion) {
+            // Harmonium-like reed: odd harmonics on Sa and Pa.
+            double reed = 0.0;
+            for (final f in const [261.63, 392.0]) {
+              reed += sin(2 * pi * f * t) + 0.4 * sin(2 * pi * f * 3 * t) + 0.2 * sin(2 * pi * f * 5 * t);
+            }
+            sampleValue = reed * 0.25 * env;
+          } else {
+            final List<double> stab = isSynthwave ? [329.63, 392.0] : [329.63, 440.0];
+            sampleValue = (sin(2 * pi * stab[0] * t) + sin(2 * pi * stab[1] * t)) * 0.4 * env;
+          }
           break;
 
         case 'fx_riser':
         default:
-          double sweepFreq = 200.0 + (t / durationSeconds) * 1200.0;
+          double sweepFreq = 200.0 + (t / bar) * 1200.0;
           double noise = (rng.nextDouble() * 2 - 1) * 0.15;
-          sampleValue = (sin(2 * pi * sweepFreq * t) + noise) * (t / durationSeconds) * 0.5;
+          sampleValue = (sin(2 * pi * sweepFreq * t) + noise) * (t / bar) * 0.5;
           break;
       }
 
-      // Apply Low-Pass Filter simulation based on filterCutoff (0.0 to 1.0)
       if (filterCutoff < 1.0) {
-        sampleValue *= (0.2 + 0.8 * filterCutoff);
+        filtered += filterAlpha * (sampleValue - filtered);
+        sampleValue = filtered;
       }
 
       sampleValue = sampleValue.clamp(-1.0, 1.0);

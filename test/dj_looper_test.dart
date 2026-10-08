@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:surjam/core/audio/sound_synthesizer.dart';
 import 'package:surjam/features/djlooper/models/dj_looper_model.dart';
 import 'package:surjam/features/djlooper/providers/dj_looper_provider.dart';
 
@@ -47,6 +49,53 @@ void main() {
       provider.stopAll();
       expect(provider.activeTrackIds.isEmpty, isTrue);
       expect(provider.isMasterPlaying, isFalse);
+    });
+
+    test('DJ loops are exactly one bar long at any BPM', () {
+      for (final bpm in [90, 124, 160]) {
+        final bytes = SoundSynthesizer.generateDJLoopWav('drums', bpm: bpm);
+        final expectedSamples = (SoundSynthesizer.sampleRate * 4 * 60.0 / bpm).toInt();
+        expect(bytes.length, equals(44 + expectedSamples * 2), reason: 'bpm $bpm');
+      }
+    });
+
+    test('Each sound pack produces different audio', () {
+      for (final track in ['chords', 'lead', 'piano_stab']) {
+        final packs = DJSoundPack.soundPacks
+            .map((p) => SoundSynthesizer.generateDJLoopWav(track, bpm: 120, packId: p.id))
+            .toList();
+        expect(listEquals(packs[0], packs[1]), isFalse, reason: track);
+        expect(listEquals(packs[0], packs[2]), isFalse, reason: track);
+        expect(listEquals(packs[1], packs[2]), isFalse, reason: track);
+      }
+    });
+
+    test('Low-pass filter removes high-frequency content', () {
+      // Sum of absolute sample-to-sample differences rises with high-frequency energy.
+      double roughness(Uint8List wav) {
+        final data = ByteData.sublistView(wav);
+        double total = 0;
+        for (int i = 46; i + 1 < wav.length; i += 2) {
+          total += (data.getInt16(i, Endian.little) - data.getInt16(i - 2, Endian.little)).abs();
+        }
+        return total;
+      }
+
+      final open = SoundSynthesizer.generateDJLoopWav('percussion', filterCutoff: 1.0);
+      final closed = SoundSynthesizer.generateDJLoopWav('percussion', filterCutoff: 0.1);
+      expect(roughness(closed), lessThan(roughness(open) * 0.5));
+    });
+
+    test('Pack and BPM changes are applied without stopping playback', () {
+      final provider = DJLooperProvider();
+      provider.toggleTrack('drums');
+      provider.setMasterBpm(140);
+      provider.setSoundPack(DJSoundPack.soundPacks[2]);
+
+      expect(provider.isMasterPlaying, isTrue);
+      expect(provider.masterBpm, equals(128));
+      expect(provider.selectedPack.id, equals('indian_fusion'));
+      provider.stopAll();
     });
 
     test('DJLooperProvider audio filter cutoff update', () {

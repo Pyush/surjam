@@ -13,7 +13,7 @@ class TunerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => TunerProvider(),
+      create: (_) => TunerProvider()..startListening(),
       child: Consumer<TunerProvider>(
         builder: (context, provider, child) {
           final preset = provider.selectedPreset;
@@ -119,7 +119,7 @@ class TunerScreen extends StatelessWidget {
 
                   const SizedBox(height: 6),
 
-                  // 3. CALIBRATION / MANUAL PITCH TEST BAR
+                  // 3. MICROPHONE CONTROLS
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -127,45 +127,37 @@ class TunerScreen extends StatelessWidget {
                       color: AppColors.darkCard,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          const Text(
-                            'Test Pitch: ',
-                            style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () => provider.isTuningActive ? provider.stopListening() : provider.startListening(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: provider.isTuningActive ? AppColors.recordRed : const Color(0xFF2CB67D),
+                            foregroundColor: provider.isTuningActive ? Colors.white : Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                           ),
-                          const SizedBox(width: 4),
-                          OutlinedButton(
-                            onPressed: () => provider.nukeCentsFlat(),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.amber,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                          icon: Icon(provider.isTuningActive ? Icons.mic_off_rounded : Icons.mic_rounded, size: 16),
+                          label: Text(
+                            provider.isTuningActive ? 'Stop Listening' : 'Start Listening',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Auto string',
+                              style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
-                            child: const Text('♭ Flat (-25c)', style: TextStyle(fontSize: 11)),
-                          ),
-                          const SizedBox(width: 4),
-                          ElevatedButton(
-                            onPressed: () => provider.setPerfectInTune(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2CB67D),
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            Switch(
+                              value: provider.autoSelectTarget,
+                              activeTrackColor: AppColors.pianoGold,
+                              onChanged: provider.setAutoSelectTarget,
                             ),
-                            child: const Text('✔ In-Tune', style: TextStyle(fontSize: 11)),
-                          ),
-                          const SizedBox(width: 4),
-                          OutlinedButton(
-                            onPressed: () => provider.nukeCentsSharp(),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.redAccent,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                            ),
-                            child: const Text('♯ Sharp (+25c)', style: TextStyle(fontSize: 11)),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
 

@@ -5,7 +5,6 @@ import '../../../core/audio/audio_engine.dart';
 class HarmoniumProvider extends ChangeNotifier {
   int _octave = 4;
   String _activeDrone = 'none'; // 'sa', 'pa', 'dha', 'none'
-  Timer? _droneTimer;
   final Set<int> _activeKeys = {};
 
   int get octave => _octave;
@@ -37,29 +36,21 @@ class HarmoniumProvider extends ChangeNotifier {
 
   void startDrone(String sur) {
     _activeDrone = sur;
-    _droneTimer?.cancel();
     notifyListeners();
 
     int droneMidi = (sur == 'sa') ? 48 : (sur == 'pa' ? 55 : 57);
-    AudioEngine().playHarmoniumNote(droneMidi);
-
-    _droneTimer = Timer.periodic(const Duration(milliseconds: 1400), (_) {
-      if (_activeDrone != 'none') {
-        AudioEngine().playHarmoniumNote(droneMidi);
-      }
-    });
+    AudioEngine().startDrone(droneMidi);
   }
 
   void stopDrone() {
     _activeDrone = 'none';
-    _droneTimer?.cancel();
-    _droneTimer = null;
+    AudioEngine().stopDrone();
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _droneTimer?.cancel();
+    if (_activeDrone != 'none') AudioEngine().stopDrone();
     super.dispose();
   }
 }

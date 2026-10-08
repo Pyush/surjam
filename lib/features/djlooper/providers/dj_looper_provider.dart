@@ -10,7 +10,10 @@ class DJLooperProvider extends ChangeNotifier {
   double _filterCutoff = 1.0;
   bool _isMasterPlaying = false;
   int _pulseIndex = 0;
+  int _timerBpm = 124;
   Timer? _bpmPulseTimer;
+
+  static const int pulsesPerBar = 8;
 
   DJSoundPack get selectedPack => _selectedPack;
   Set<String> get activeTrackIds => Set.unmodifiable(_activeTrackIds);
@@ -19,22 +22,17 @@ class DJLooperProvider extends ChangeNotifier {
   bool get isMasterPlaying => _isMasterPlaying;
   int get pulseIndex => _pulseIndex;
 
+  // Pack and tempo changes take effect at the next bar line, so loops never
+  // overlap at two different tempos.
   void setSoundPack(DJSoundPack pack) {
     _selectedPack = pack;
     _masterBpm = pack.defaultBpm;
-    if (_isMasterPlaying) {
-      _startBpmTimer();
-    } else {
-      notifyListeners();
-    }
+    notifyListeners();
   }
 
   void setMasterBpm(int bpm) {
     _masterBpm = bpm.clamp(90, 160);
     notifyListeners();
-    if (_isMasterPlaying) {
-      _startBpmTimer();
-    }
   }
 
   void setFilterCutoff(double value) {
@@ -42,12 +40,13 @@ class DJLooperProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // A track switched on while others are playing joins at the next bar line,
+  // like a clip launcher.
   void toggleTrack(String trackId) {
     if (_activeTrackIds.contains(trackId)) {
       _activeTrackIds.remove(trackId);
     } else {
       _activeTrackIds.add(trackId);
-      AudioEngine().playDJLoopTrack(trackId, filterCutoff: _filterCutoff);
     }
 
     if (_activeTrackIds.isNotEmpty && !_isMasterPlaying) {
@@ -70,23 +69,41 @@ class DJLooperProvider extends ChangeNotifier {
   void _startBpmTimer() {
     _bpmPulseTimer?.cancel();
     _isMasterPlaying = true;
+    _pulseIndex = 0;
+    _playActiveTracks();
+    _schedulePulseTimer();
     notifyListeners();
+  }
 
-    int intervalMs = ((60.0 / _masterBpm) * 1000 / 2).toInt(); // 8th note pulses
-    _bpmPulseTimer = Timer.periodic(Duration(milliseconds: intervalMs), (_) {
+  // 8th-note pulses; every 8th pulse is a bar line where the one-bar loops restart.
+  void _schedulePulseTimer() {
+    _timerBpm = _masterBpm;
+    final interval = Duration(microseconds: (60e6 / _timerBpm / 2).round());
+    _bpmPulseTimer = Timer.periodic(interval, (_) {
       if (!_isMasterPlaying || _activeTrackIds.isEmpty) return;
 
-      _pulseIndex = (_pulseIndex + 1) % 4;
-
-      // Loop audio play on bar boundaries
+      _pulseIndex = (_pulseIndex + 1) % pulsesPerBar;
       if (_pulseIndex == 0) {
-        for (String trackId in _activeTrackIds) {
-          AudioEngine().playDJLoopTrack(trackId, filterCutoff: _filterCutoff);
+        _playActiveTracks();
+        if (_timerBpm != _masterBpm) {
+          _bpmPulseTimer?.cancel();
+          _schedulePulseTimer();
         }
       }
 
       notifyListeners();
     });
+  }
+
+  void _playActiveTracks() {
+    for (String trackId in _activeTrackIds) {
+      AudioEngine().playDJLoopTrack(
+        trackId,
+        filterCutoff: _filterCutoff,
+        bpm: _masterBpm,
+        packId: _selectedPack.id,
+      );
+    }
   }
 
   @override

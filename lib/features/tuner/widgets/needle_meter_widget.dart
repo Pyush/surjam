@@ -16,9 +16,13 @@ class NeedleMeterWidget extends StatelessWidget {
     final noteName = PitchConverter.midiToNoteName(targetNote.midiNote);
     final sargamName = PitchConverter.midiToSargam(targetNote.midiNote);
 
-    Color statusColor = isInTune
-        ? const Color(0xFF2CB67D)
-        : (cents < 0 ? const Color(0xFFFFB703) : const Color(0xFFE63946));
+    final hasSignal = provider.hasSignal;
+
+    Color statusColor = !hasSignal
+        ? Colors.white38
+        : isInTune
+            ? const Color(0xFF2CB67D)
+            : (cents < 0 ? const Color(0xFFFFB703) : const Color(0xFFE63946));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -82,9 +86,8 @@ class NeedleMeterWidget extends StatelessWidget {
 
           // 3. CENTS & IN-TUNE STATUS TEXT
           Text(
-            isInTune
-                ? '✔ PERFECT IN TUNE (${provider.currentFrequency.toStringAsFixed(1)} Hz)'
-                : '${cents < 0 ? "♭ FLAT" : "♯ SHARP"} (${cents > 0 ? "+" : ""}${cents.toStringAsFixed(1)} Cents)',
+            _statusText(provider),
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: statusColor,
               fontSize: 13,
@@ -92,9 +95,32 @@ class NeedleMeterWidget extends StatelessWidget {
               letterSpacing: 1.1,
             ),
           ),
+          if (hasSignal) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Hearing ${PitchConverter.midiToNoteName(provider.detectedMidi)} · ${provider.currentFrequency.toStringAsFixed(1)} Hz',
+              style: const TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+          ],
         ],
       ),
     );
+  }
+}
+
+String _statusText(TunerProvider provider) {
+  switch (provider.status) {
+    case TunerStatus.permissionDenied:
+      return 'Microphone access is off. Allow it in Settings to tune.';
+    case TunerStatus.unavailable:
+      return 'No microphone available on this device.';
+    case TunerStatus.idle:
+      return 'Tap Start Listening to tune.';
+    case TunerStatus.listening:
+      if (!provider.hasSignal) return 'Listening… play or sing a note';
+      final cents = provider.centsOffset;
+      if (provider.isInTune) return '✔ IN TUNE';
+      return '${cents < 0 ? "♭ FLAT" : "♯ SHARP"} (${cents > 0 ? "+" : ""}${cents.toStringAsFixed(1)} Cents)';
   }
 }
 

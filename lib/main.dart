@@ -18,7 +18,6 @@ import 'features/dholak/providers/dholak_provider.dart';
 import 'features/ukulele/providers/ukulele_provider.dart';
 import 'features/xylophone/providers/xylophone_provider.dart';
 import 'features/djlooper/providers/dj_looper_provider.dart';
-import 'features/tuner/providers/tuner_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,7 +53,6 @@ class SurJamApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UkuleleProvider()),
         ChangeNotifierProvider(create: (_) => XylophoneProvider()),
         ChangeNotifierProvider(create: (_) => DJLooperProvider()),
-        ChangeNotifierProvider(create: (_) => TunerProvider()),
         ChangeNotifierProvider(create: (_) => MetronomeService()),
       ],
       child: MaterialApp(

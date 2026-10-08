@@ -26,11 +26,11 @@ class ExerciseModel {
     ),
     ExerciseModel(
       id: 'ex_sargam',
-      title: 'Indian Sargam (Sa Re Ga Ma)',
-      subtitle: 'Basic Indian classical vocal & instrumental note ladder',
+      title: 'Indian Sargam (Aroh & Avroh)',
+      subtitle: 'Climb Sa Re Ga Ma Pa Dha Ni Sa\' and come back down',
       category: 'Indian Sargam',
       difficulty: 'Beginner',
-      midiSequence: [60, 62, 64, 65, 67, 69, 71, 72],
+      midiSequence: [60, 62, 64, 65, 67, 69, 71, 72, 71, 69, 67, 65, 64, 62, 60],
     ),
     ExerciseModel(
       id: 'ex_chords',

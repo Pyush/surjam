@@ -7,9 +7,14 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../shared/widgets/banner_ad_widget.dart';
 
-class ExerciseListScreen extends StatelessWidget {
+class ExerciseListScreen extends StatefulWidget {
   const ExerciseListScreen({super.key});
 
+  @override
+  State<ExerciseListScreen> createState() => _ExerciseListScreenState();
+}
+
+class _ExerciseListScreenState extends State<ExerciseListScreen> {
   @override
   Widget build(BuildContext context) {
     final exercises = ExerciseModel.preloadedExercises;
@@ -115,13 +120,15 @@ class ExerciseListScreen extends StatelessWidget {
                         ],
                       ),
                       trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 18),
-                      onTap: () {
+                      onTap: () async {
                         final provider = context.read<PianoProvider>();
-                        provider.startLearnExercise(ex.midiSequence);
-                        Navigator.push(
+                        provider.startLearnExercise(ex.id, ex.midiSequence);
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const PianoScreen()),
                         );
+                        // Show any new high score earned on the piano screen.
+                        if (mounted) setState(() {});
                       },
                     ),
                   );

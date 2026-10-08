@@ -32,10 +32,16 @@ class PianoProvider extends ChangeNotifier {
   final List<NoteEvent> _recordedEvents = [];
 
   // Learn Mode State
+  static const int pointsPerCorrectNote = 100;
+  static const int pointsPerWrongNote = 25;
+
   bool _isLearnMode = false;
+  bool _isLearnComplete = false;
+  String? _learnExerciseId;
   List<int> _learnSequence = [];
   int _currentLearnStep = 0;
   int _learnScore = 0;
+  int _learnMistakes = 0;
   int _totalLearnSteps = 0;
 
   PianoProvider() {
@@ -55,11 +61,15 @@ class PianoProvider extends ChangeNotifier {
   bool get isLearnMode => _isLearnMode;
   List<int> get learnSequence => _learnSequence;
   int get currentLearnStep => _currentLearnStep;
+  bool get isLearnComplete => _isLearnComplete;
   int get learnScore => _learnScore;
+  int get learnMistakes => _learnMistakes;
   int get totalLearnSteps => _totalLearnSteps;
+  int get learnBestScore =>
+      _learnExerciseId == null ? 0 : StorageService().getExerciseScore(_learnExerciseId!);
 
   int? get targetLearnMidiNote {
-    if (!_isLearnMode || _currentLearnStep >= _learnSequence.length) return null;
+    if (!_isLearnMode || _isLearnComplete || _currentLearnStep >= _learnSequence.length) return null;
     return _learnSequence[_currentLearnStep];
   }
 
@@ -111,12 +121,14 @@ class PianoProvider extends ChangeNotifier {
     // Learn Mode Step Check
     if (_isLearnMode && targetLearnMidiNote != null) {
       if (midiNote == targetLearnMidiNote) {
-        _learnScore += 100;
+        _learnScore += pointsPerCorrectNote;
         _currentLearnStep++;
         if (_currentLearnStep >= _learnSequence.length) {
-          // Completed Exercise!
-          _isLearnMode = false;
+          _completeLearnExercise();
         }
+      } else {
+        _learnMistakes++;
+        _learnScore = (_learnScore - pointsPerWrongNote).clamp(0, 1 << 30);
       }
     }
 
@@ -165,20 +177,39 @@ class PianoProvider extends ChangeNotifier {
   }
 
   // Start Learn Exercise
-  void startLearnExercise(List<int> midiSequence) {
+  void startLearnExercise(String exerciseId, List<int> midiSequence) {
     _isLearnMode = true;
-    _learnSequence = midiSequence;
+    _isLearnComplete = false;
+    _learnExerciseId = exerciseId;
+    _learnSequence = List.of(midiSequence);
     _currentLearnStep = 0;
     _learnScore = 0;
+    _learnMistakes = 0;
     _totalLearnSteps = midiSequence.length;
     _selectedScale = null;
     _selectedChord = null;
     notifyListeners();
   }
 
+  void restartLearnExercise() {
+    if (_learnExerciseId == null) return;
+    startLearnExercise(_learnExerciseId!, _learnSequence);
+  }
+
+  // The exercise stays on screen after completion so the result can be shown;
+  // stopLearnExercise() dismisses it.
+  void _completeLearnExercise() {
+    _isLearnComplete = true;
+    if (_learnExerciseId != null) {
+      StorageService().saveExerciseScore(_learnExerciseId!, _learnScore);
+    }
+  }
+
   void stopLearnExercise() {
     _isLearnMode = false;
-    _learnSequence.clear();
+    _isLearnComplete = false;
+    _learnExerciseId = null;
+    _learnSequence = [];
     _currentLearnStep = 0;
     notifyListeners();
   }

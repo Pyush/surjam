@@ -23,6 +23,9 @@ class AudioEngine {
   final Map<String, Uint8List> _tablaCache = {};
   final Map<String, Uint8List> _dholakCache = {};
   final Map<String, Uint8List> _djLoopCache = {};
+  String? _djLoopCacheContext;
+  final Map<int, Uint8List> _droneCache = {};
+  AudioPlayer? _dronePlayer;
 
   bool _isInitialized = false;
 
@@ -175,15 +178,44 @@ class AudioEngine {
     await _playWavFromBytes(bytes);
   }
 
-  Future<void> playDJLoopTrack(String trackId, {double filterCutoff = 1.0}) async {
+  Future<void> playDJLoopTrack(String trackId, {double filterCutoff = 1.0, int bpm = 124, String packId = 'electro_house'}) async {
     if (!_isInitialized) await initialize();
-    final key = '${trackId.toLowerCase()}_${(filterCutoff * 10).round()}';
+    // Loops are one bar long, so a BPM or pack change invalidates every cached loop.
+    final context = '${packId}_$bpm';
+    if (context != _djLoopCacheContext) {
+      _djLoopCache.clear();
+      _djLoopCacheContext = context;
+    }
+    final double roundedCutoff = (filterCutoff * 10).round() / 10;
+    final key = '${trackId.toLowerCase()}_${(roundedCutoff * 10).round()}';
     Uint8List? bytes = _djLoopCache[key];
     if (bytes == null) {
-      bytes = SoundSynthesizer.generateDJLoopWav(trackId, filterCutoff: filterCutoff);
+      bytes = SoundSynthesizer.generateDJLoopWav(trackId, filterCutoff: roundedCutoff, bpm: bpm, packId: packId);
       _djLoopCache[key] = bytes;
     }
     await _playWavFromBytes(bytes);
+  }
+
+  /// Starts a continuous, looping drone on [midiNote], replacing any drone already playing.
+  /// It uses its own player so keyboard notes never cut it off.
+  Future<void> startDrone(int midiNote) async {
+    Uint8List? bytes = _droneCache[midiNote];
+    if (bytes == null) {
+      bytes = SoundSynthesizer.generateHarmoniumDroneWav(SoundSynthesizer.midiToFrequency(midiNote));
+      _droneCache[midiNote] = bytes;
+    }
+    try {
+      final player = _dronePlayer ??= AudioPlayer();
+      await player.stop();
+      await player.setReleaseMode(ReleaseMode.loop);
+      await player.play(BytesSource(bytes));
+    } catch (_) {}
+  }
+
+  Future<void> stopDrone() async {
+    try {
+      await _dronePlayer?.stop();
+    } catch (_) {}
   }
 
   Future<void> playClick({bool isAccent = false}) async {
@@ -207,6 +239,9 @@ class AudioEngine {
       player.dispose();
     }
     _players.clear();
+    _dronePlayer?.dispose();
+    _dronePlayer = null;
+    _droneCache.clear();
     _pianoCache.clear();
     _sitarCache.clear();
     _fluteCache.clear();

@@ -251,24 +251,42 @@ class PianoScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.school_rounded, color: AppColors.learnGreen, size: 22),
+          Icon(
+            provider.isLearnComplete ? Icons.emoji_events_rounded : Icons.school_rounded,
+            color: provider.isLearnComplete ? AppColors.pianoGold : AppColors.learnGreen,
+            size: 22,
+          ),
           const SizedBox(width: 10),
           Text(
             'Score: ${provider.learnScore}',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(width: 16),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.white12,
-                color: AppColors.learnGreen,
-                minHeight: 8,
+          if (provider.isLearnComplete) ...[
+            Expanded(
+              child: Text(
+                'Complete! Best: ${provider.learnBestScore} · Mistakes: ${provider.learnMistakes}',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppColors.pianoGold, fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
-          ),
+            IconButton(
+              tooltip: 'Try again',
+              icon: const Icon(Icons.replay_rounded, color: AppColors.learnGreen, size: 20),
+              onPressed: () => provider.restartLearnExercise(),
+            ),
+          ] else
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: Colors.white12,
+                  color: AppColors.learnGreen,
+                  minHeight: 8,
+                ),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 20),
             onPressed: () => provider.stopLearnExercise(),

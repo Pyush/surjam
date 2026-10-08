@@ -38,6 +38,7 @@ dependencies:
   google_mobile_ads: ^9.1.0
   flutter_animate: ^4.5.2
   path_provider: ^2.1.5
+  record: ^7.1.1
 
 dev_dependencies:
   flutter_test:

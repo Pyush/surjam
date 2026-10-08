@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Chromatic tuner listens to the instrument or voice being tuned. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <application
         android:label="SurJam"
         android:name="${applicationName}"
