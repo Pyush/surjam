@@ -38,6 +38,9 @@ class AppTheme {
           side: const BorderSide(color: AppColors.darkCardBorder),
         ),
       ),
+      sliderTheme: const SliderThemeData(
+        inactiveTrackColor: Colors.white24,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryNeon,

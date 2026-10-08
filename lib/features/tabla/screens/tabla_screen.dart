@@ -77,7 +77,9 @@ class TablaScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Taal Selector Dropdown
-          DropdownButton<TaalModel>(
+          Flexible(
+            child: DropdownButton<TaalModel>(
+            isExpanded: true,
             dropdownColor: AppColors.darkCard,
             value: provider.selectedTaal,
             style: const TextStyle(color: AppColors.tablaAmber, fontWeight: FontWeight.bold, fontSize: 15),
@@ -89,10 +91,12 @@ class TablaScreen extends StatelessWidget {
             items: TaalModel.preloadedTaals.map((taal) {
               return DropdownMenuItem(
                 value: taal,
-                child: Text(taal.name),
+                child: Text(taal.name, overflow: TextOverflow.ellipsis),
               );
             }).toList(),
+            ),
           ),
+          const SizedBox(width: 8),
 
           // Record Button
           ElevatedButton.icon(

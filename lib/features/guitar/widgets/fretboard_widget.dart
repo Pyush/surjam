@@ -59,7 +59,8 @@ class FretboardWidget extends StatelessWidget {
                 int midiNote = (fretNum >= 0) ? openMidi[stringIdx] + fretNum : openMidi[stringIdx];
                 bool isPlucked = provider.pluckedStringIndex == stringIdx;
 
-                return GestureDetector(
+                return Expanded(
+                  child: GestureDetector(
                   onTap: () {
                     if (fretNum != -1) {
                       provider.pluckString(stringIdx, midiNote);
@@ -67,7 +68,6 @@ class FretboardWidget extends StatelessWidget {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 60),
-                    height: 38,
                     color: isPlucked ? AppColors.primaryNeon.withValues(alpha: 0.15) : Colors.transparent,
                     child: Row(
                       children: [
@@ -136,6 +136,7 @@ class FretboardWidget extends StatelessWidget {
                         }),
                       ],
                     ),
+                  ),
                   ),
                 );
               }),

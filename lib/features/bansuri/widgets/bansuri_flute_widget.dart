@@ -37,9 +37,9 @@ class BansuriFluteWidget extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Bamboo Flute Cylinder Body
+                    // Bamboo Flute Cylinder Body (shrinks when there is little height, e.g. landscape)
                     Container(
-                      height: 100,
+                      height: (constraints.maxHeight - 36).clamp(40.0, 100.0),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(50),
                         gradient: const LinearGradient(
@@ -102,13 +102,16 @@ class BansuriFluteWidget extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: List.generate(6, (holeIdx) {
                                 double coverage = coverages[holeIdx];
-                                return GestureDetector(
+                                return Expanded(
+                                  child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: GestureDetector(
                                   onTap: () => provider.toggleHoleCoverage(holeIdx),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        'Hole ${holeIdx + 1}',
+                                        '${holeIdx + 1}',
                                         style: const TextStyle(
                                           color: Colors.black87,
                                           fontSize: 9,
@@ -118,6 +121,8 @@ class BansuriFluteWidget extends StatelessWidget {
                                       const SizedBox(height: 4),
                                       _buildHoleWidget(coverage, provider.isPlaying),
                                     ],
+                                  ),
+                                  ),
                                   ),
                                 );
                               }),

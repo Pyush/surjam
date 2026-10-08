@@ -82,14 +82,18 @@ class DJLooperScreen extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
+                                  Flexible(
+                                    child: Text(
                                     pack.name,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       color: AppColors.primaryCyan,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
                                     ),
+                                    ),
                                   ),
+                                  const SizedBox(width: 6),
                                   Text(
                                     '${provider.masterBpm} BPM',
                                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),

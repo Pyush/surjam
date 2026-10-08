@@ -172,12 +172,12 @@ class _TablaSurfaceWidgetState extends State<TablaSurfaceWidget> with TickerProv
                     children: const [
                       Text(
                         'DAYAN',
-                        style: TextStyle(color: Colors.black54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                        style: TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1, shadows: [Shadow(color: Colors.black, blurRadius: 3)]),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'Na / Tin',
-                        style: TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, shadows: [Shadow(color: Colors.black, blurRadius: 3)]),
                       ),
                     ],
                   ),

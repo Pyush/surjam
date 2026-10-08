@@ -15,6 +15,7 @@ class GuitarScreen extends StatelessWidget {
       create: (_) => GuitarProvider(),
       child: Consumer<GuitarProvider>(
         builder: (context, provider, child) {
+          final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
           return Scaffold(
             appBar: AppBar(
               title: const Text('🎸 Guitar Studio'),
@@ -45,47 +46,55 @@ class GuitarScreen extends StatelessWidget {
                   // 1. Chord Selector Palette
                   _buildChordPalette(context, provider),
 
-                  // 2. Main Fretboard View
-                  const Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: FretboardWidget(),
+                  // 2. Main Fretboard View, with the strum buttons beside it in landscape
+                  // so the six strings keep enough height to tap.
+                  if (isLandscape)
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: FretboardWidget(),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 200,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 8, 12, 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(child: _buildStrumButton(provider, isDown: true)),
+                                  const SizedBox(height: 12),
+                                  Expanded(child: _buildStrumButton(provider, isDown: false)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    const Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: FretboardWidget(),
+                      ),
                     ),
-                  ),
 
-                  // 3. Strum Action Bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryNeon,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            icon: const Icon(Icons.music_note_rounded),
-                            label: const Text('STRUM DOWN 👇', style: TextStyle(fontWeight: FontWeight.bold)),
-                            onPressed: () => provider.strumChord(isDownStrum: true),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryCyan,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            icon: const Icon(Icons.music_note_rounded),
-                            label: const Text('STRUM UP 👆', style: TextStyle(fontWeight: FontWeight.bold)),
-                            onPressed: () => provider.strumChord(isDownStrum: false),
-                          ),
-                        ),
-                      ],
+                    // 3. Strum Action Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(child: _buildStrumButton(provider, isDown: true)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _buildStrumButton(provider, isDown: false)),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
 
                   // 4. AdMob Banner Ad
                   const BannerAdWidget(),
@@ -95,6 +104,19 @@ class GuitarScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildStrumButton(GuitarProvider provider, {required bool isDown}) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isDown ? AppColors.primaryNeon : AppColors.primaryCyan,
+        foregroundColor: Colors.black,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+      ),
+      icon: const Icon(Icons.music_note_rounded),
+      label: Text(isDown ? 'STRUM DOWN 👇' : 'STRUM UP 👆', style: const TextStyle(fontWeight: FontWeight.bold)),
+      onPressed: () => provider.strumChord(isDownStrum: isDown),
     );
   }
 

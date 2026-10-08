@@ -101,10 +101,13 @@ class PianoScreen extends StatelessWidget {
         border: Border.all(color: AppColors.darkCardBorder),
         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
+      // Wraps onto a second line on narrow screens so every control (including REC) stays visible.
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        alignment: WrapAlignment.spaceBetween,
+        children: [
             // Octave Selector
             Row(
               children: [
@@ -132,12 +135,11 @@ class PianoScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(width: 16),
-            Container(width: 1, height: 24, color: AppColors.darkCardBorder),
-            const SizedBox(width: 16),
-
             // Scale & Chord Finder Dropdown
-            DropdownButton<String>(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 200),
+              child: DropdownButton<String>(
+              isExpanded: true,
               dropdownColor: AppColors.darkCard,
               value: currentDropdownValue,
               hint: const Text('Scale / Chord', style: TextStyle(color: Colors.white70, fontSize: 13)),
@@ -155,14 +157,11 @@ class PianoScreen extends StatelessWidget {
               },
               items: [
                 const DropdownMenuItem(value: 'none', child: Text('Clear Highlights')),
-                ...MusicTheoryData.scales.keys.map((s) => DropdownMenuItem(value: 'scale:$s', child: Text('Scale: $s'))),
-                ...MusicTheoryData.chords.keys.map((c) => DropdownMenuItem(value: 'chord:$c', child: Text('Chord: $c'))),
+                ...MusicTheoryData.scales.keys.map((s) => DropdownMenuItem(value: 'scale:$s', child: Text('Scale: $s', overflow: TextOverflow.ellipsis))),
+                ...MusicTheoryData.chords.keys.map((c) => DropdownMenuItem(value: 'chord:$c', child: Text('Chord: $c', overflow: TextOverflow.ellipsis))),
               ],
+              ),
             ),
-
-            const SizedBox(width: 16),
-            Container(width: 1, height: 24, color: AppColors.darkCardBorder),
-            const SizedBox(width: 16),
 
             // Record Button
             ElevatedButton.icon(
@@ -189,8 +188,7 @@ class PianoScreen extends StatelessWidget {
                 }
               },
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

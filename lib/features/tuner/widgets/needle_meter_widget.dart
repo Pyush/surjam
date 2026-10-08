@@ -133,7 +133,8 @@ class _NeedleMeterPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height * 0.9);
-    final radius = size.width * 0.4;
+    // Fit the half-circle inside the box on wide (landscape) layouts too.
+    final radius = min(size.width * 0.4, size.height * 0.8);
 
     // Arc background
     final arcPaint = Paint()

@@ -43,10 +43,14 @@ class XylophoneScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          '2-Octave Mallet Instrument (C4 to C6)',
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                        const Flexible(
+                          child: Text(
+                            '2 Octaves · C4 to C6',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
@@ -54,7 +58,7 @@ class XylophoneScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            provider.useSargam ? 'Labels: Sargam (Sa-Re-Ga)' : 'Labels: English (C-D-E)',
+                            provider.useSargam ? 'Labels: Sargam' : 'Labels: English',
                             style: const TextStyle(color: AppColors.pianoGold, fontSize: 11, fontWeight: FontWeight.bold),
                           ),
                         ),

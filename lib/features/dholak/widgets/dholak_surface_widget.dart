@@ -138,8 +138,10 @@ class DholakSurfaceWidget extends StatelessWidget {
                   ),
                 ),
 
-              // Interactive Stroke Hit Zones
-              Column(
+              // Interactive Stroke Hit Zones (scaled down when the drum is short, e.g. landscape)
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: strokes.map((stroke) {
                   return Padding(
@@ -162,6 +164,7 @@ class DholakSurfaceWidget extends StatelessWidget {
                     ),
                   );
                 }).toList(),
+                ),
               ),
             ],
           ),
@@ -221,13 +224,16 @@ class DholakSurfaceWidget extends StatelessWidget {
         border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           const Text(
             'Compound Strokes:',
             style: TextStyle(color: AppColors.pianoGold, fontSize: 11, fontWeight: FontWeight.bold),
           ),
-          Row(
+          const SizedBox(width: 6),
+          Expanded(
+            child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
             children: comboStrokes.map((s) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -235,13 +241,15 @@ class DholakSurfaceWidget extends StatelessWidget {
                   backgroundColor: AppColors.tablaAmber.withValues(alpha: 0.2),
                   side: const BorderSide(color: AppColors.tablaAmber),
                   label: Text(
-                    '${s.bol} (${s.name.split(' ').first})',
+                    s.bol,
                     style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                   onPressed: () => provider.playStroke(s),
                 ),
               );
             }).toList(),
+            ),
+            ),
           ),
         ],
       ),
