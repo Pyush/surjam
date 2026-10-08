@@ -80,4 +80,39 @@ void main() {
       await tester.pump(const Duration(seconds: 31));
     });
   }
+
+  testWidgets('Lesson panel shows the next note, its finger and a Listen button', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final piano = PianoProvider();
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: piano),
+        ChangeNotifierProvider(create: (_) => MetronomeService()),
+      ],
+      child: const MaterialApp(home: PianoScreen()),
+    ));
+    piano.startLearnExercise('ex_panel', [60, 62], fingers: [1, 2]);
+    await tester.pump();
+    expect(find.text('Next: C4 · Finger 1'), findsOneWidget);
+
+    piano.setKeyLabelMode('sargam');
+    await tester.pump();
+    expect(find.text('Next: Sa · Finger 1'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Listen first'));
+    await tester.pump();
+    expect(piano.isDemoPlaying, isTrue);
+    expect(find.byTooltip('Stop demo'), findsOneWidget);
+    await tester.tap(find.byTooltip('Stop demo'));
+    await tester.pump();
+    expect(piano.isDemoPlaying, isFalse);
+
+    piano.setKeyLabelMode('english');
+    piano.stopLearnExercise();
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 31));
+  });
 }

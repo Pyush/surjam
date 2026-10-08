@@ -68,6 +68,31 @@ void main() {
       expect(exercise.midiSequence, equals([60, 62, 64]));
     });
 
+    test('A lesson moves the keyboard to the octave that contains it', () {
+      final provider = PianoProvider();
+      provider.setOctave(6);
+      provider.startLearnExercise('ex_low', [60, 62]);
+      expect(provider.octave, equals(4)); // keyboard shows C4 to B5
+    });
+
+    test('Fingering is offered for the next note and advances with it', () {
+      final provider = PianoProvider();
+      provider.startLearnExercise('ex_fingers', [60, 62, 64], fingers: [1, 2, 3]);
+      expect(provider.targetLearnFinger, equals(1));
+      provider.onNoteDown(60);
+      expect(provider.targetLearnFinger, equals(2));
+      provider.startLearnExercise('ex_no_fingers', [60, 62]);
+      expect(provider.targetLearnFinger, isNull);
+    });
+
+    test('Restart keeps the lesson fingering and rhythm', () {
+      final provider = PianoProvider();
+      provider.startLearnExercise('ex_keep', [60, 62], fingers: [1, 2], beats: [1, 2], bpm: 120);
+      provider.onNoteDown(60);
+      provider.restartLearnExercise();
+      expect(provider.targetLearnFinger, equals(1));
+    });
+
     test('Restart resets progress for the same exercise', () {
       final provider = PianoProvider();
       provider.startLearnExercise(exercise.id, exercise.midiSequence);
@@ -77,6 +102,52 @@ void main() {
       expect(provider.currentLearnStep, equals(0));
       expect(provider.learnScore, equals(0));
       expect(provider.targetLearnMidiNote, equals(60));
+    });
+  });
+
+  group('Listen demo', () {
+    testWidgets('Plays the rest of the lesson at its tempo, lighting each key', (tester) async {
+      final provider = PianoProvider();
+      // Twinkle's opening at 100 BPM: one beat = 600 ms.
+      provider.startLearnExercise('song', [60, 60, 67], beats: [1, 1, 2], bpm: 100);
+
+      provider.toggleLearnDemo();
+      expect(provider.isDemoPlaying, isTrue);
+      expect(provider.demoNote, equals(60));
+
+      await tester.pump(const Duration(milliseconds: 650));
+      expect(provider.demoNote, equals(60)); // second note, same key
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(provider.demoNote, equals(67));
+      await tester.pump(const Duration(milliseconds: 1250)); // two-beat note ends
+      expect(provider.isDemoPlaying, isFalse);
+      expect(provider.demoNote, isNull);
+      // The demo never counts as the player's progress.
+      expect(provider.currentLearnStep, equals(0));
+      expect(provider.learnScore, equals(0));
+    });
+
+    testWidgets('Starts from the note the player has reached', (tester) async {
+      final provider = PianoProvider();
+      provider.startLearnExercise('song', [60, 62, 64]);
+      provider.onNoteDown(60);
+      provider.toggleLearnDemo();
+      expect(provider.demoNote, equals(62));
+      provider.toggleLearnDemo(); // tapping again stops it
+      expect(provider.isDemoPlaying, isFalse);
+      await tester.pump(const Duration(seconds: 2));
+      expect(provider.demoNote, isNull);
+    });
+
+    testWidgets('Pressing a key stops the demo so the player can take over', (tester) async {
+      final provider = PianoProvider();
+      provider.startLearnExercise('song', [60, 62, 64]);
+      provider.toggleLearnDemo();
+      provider.onNoteDown(60);
+      expect(provider.isDemoPlaying, isFalse);
+      expect(provider.currentLearnStep, equals(1));
+      await tester.pump(const Duration(seconds: 2));
+      expect(provider.demoNote, isNull);
     });
   });
 }

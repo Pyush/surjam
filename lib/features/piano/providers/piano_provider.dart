@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../../../core/storage/storage_service.dart';
@@ -43,6 +44,14 @@ class PianoProvider extends ChangeNotifier {
   int _learnScore = 0;
   int _learnMistakes = 0;
   int _totalLearnSteps = 0;
+  List<int>? _learnFingers;
+  List<double>? _learnBeats;
+  int _learnBpm = 90;
+
+  // "Listen" demo: plays the rest of the lesson and lights each key.
+  bool _isDemoPlaying = false;
+  int? _demoNote;
+  Timer? _demoTimer;
 
   PianoProvider() {
     _keyLabelMode = StorageService().getKeyLabelMode();
@@ -65,6 +74,15 @@ class PianoProvider extends ChangeNotifier {
   int get learnScore => _learnScore;
   int get learnMistakes => _learnMistakes;
   int get totalLearnSteps => _totalLearnSteps;
+  bool get isDemoPlaying => _isDemoPlaying;
+  int? get demoNote => _demoNote;
+
+  /// Suggested right-hand finger for the next note, if the lesson has fingering.
+  int? get targetLearnFinger {
+    final fingers = _learnFingers;
+    if (targetLearnMidiNote == null || fingers == null) return null;
+    return fingers[_currentLearnStep];
+  }
   int get learnBestScore =>
       _learnExerciseId == null ? 0 : StorageService().getExerciseScore(_learnExerciseId!);
 
@@ -109,6 +127,8 @@ class PianoProvider extends ChangeNotifier {
 
   // Trigger Note Down
   void onNoteDown(int midiNote) {
+    // The player taking over stops the demo.
+    if (_isDemoPlaying) _stopDemo();
     _activePressedKeys.add(midiNote);
     AudioEngine().playPianoNote(midiNote);
 
@@ -177,8 +197,23 @@ class PianoProvider extends ChangeNotifier {
   }
 
   // Start Learn Exercise
-  void startLearnExercise(String exerciseId, List<int> midiSequence) {
+  void startLearnExercise(
+    String exerciseId,
+    List<int> midiSequence, {
+    List<int>? fingers,
+    List<double>? beats,
+    int bpm = 90,
+  }) {
+    _stopDemo();
     _isLearnMode = true;
+    _learnFingers = fingers == null ? null : List.of(fingers);
+    _learnBeats = beats == null ? null : List.of(beats);
+    _learnBpm = bpm;
+    // Show the two octaves that contain the lesson, whatever octave the player left it on.
+    if (midiSequence.isNotEmpty) {
+      final lowest = midiSequence.reduce((a, b) => a < b ? a : b);
+      _octave = ((lowest ~/ 12) - 1).clamp(2, 6);
+    }
     _isLearnComplete = false;
     _learnExerciseId = exerciseId;
     _learnSequence = List.of(midiSequence);
@@ -193,7 +228,7 @@ class PianoProvider extends ChangeNotifier {
 
   void restartLearnExercise() {
     if (_learnExerciseId == null) return;
-    startLearnExercise(_learnExerciseId!, _learnSequence);
+    startLearnExercise(_learnExerciseId!, _learnSequence, fingers: _learnFingers, beats: _learnBeats, bpm: _learnBpm);
   }
 
   // The exercise stays on screen after completion so the result can be shown;
@@ -205,12 +240,55 @@ class PianoProvider extends ChangeNotifier {
     }
   }
 
+  /// Plays the lesson from the current note to the end at its tempo, lighting each key,
+  /// so the player can hear how it should sound. Calling it again stops the demo.
+  void toggleLearnDemo() {
+    if (_isDemoPlaying) {
+      _stopDemo();
+      notifyListeners();
+      return;
+    }
+    if (!_isLearnMode || _isLearnComplete) return;
+    _isDemoPlaying = true;
+    _playDemoNote(_currentLearnStep);
+  }
+
+  void _playDemoNote(int index) {
+    if (!_isDemoPlaying || index >= _learnSequence.length) {
+      _stopDemo();
+      notifyListeners();
+      return;
+    }
+    final note = _learnSequence[index];
+    _demoNote = note;
+    AudioEngine().playPianoNote(note);
+    notifyListeners();
+
+    final beats = _learnBeats?[index] ?? 1.0;
+    final duration = Duration(milliseconds: (beats * 60000 / _learnBpm).round());
+    _demoTimer = Timer(duration, () => _playDemoNote(index + 1));
+  }
+
+  void _stopDemo() {
+    _demoTimer?.cancel();
+    _demoTimer = null;
+    _isDemoPlaying = false;
+    _demoNote = null;
+  }
+
   void stopLearnExercise() {
+    _stopDemo();
     _isLearnMode = false;
     _isLearnComplete = false;
     _learnExerciseId = null;
     _learnSequence = [];
     _currentLearnStep = 0;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _stopDemo();
+    super.dispose();
   }
 }

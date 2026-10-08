@@ -15,9 +15,11 @@ class ExerciseListScreen extends StatefulWidget {
 }
 
 class _ExerciseListScreenState extends State<ExerciseListScreen> {
+  String _category = ExerciseModel.categories.first;
+
   @override
   Widget build(BuildContext context) {
-    final exercises = ExerciseModel.preloadedExercises;
+    final exercises = ExerciseModel.inCategory(_category);
 
     return Scaffold(
       appBar: AppBar(
@@ -55,12 +57,40 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Select an exercise below. The piano keyboard will highlight target keys and wait for you to press them.',
+                    'Pick a lesson. The keyboard lights up each key and waits for you to press it. Tap ▶ to hear it first.',
                     style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                   ),
                 ],
               ),
             ),
+
+            // Category filter
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: ExerciseModel.categories.map((category) {
+                  final isSelected = category == _category;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text('$category (${ExerciseModel.inCategory(category).length})'),
+                      selected: isSelected,
+                      selectedColor: AppColors.learnGreen,
+                      backgroundColor: AppColors.darkCard,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.black : Colors.white70,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                      onSelected: (_) => setState(() => _category = category),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 8),
 
             // Exercise Cards List
             Expanded(
@@ -93,7 +123,9 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                           const SizedBox(height: 4),
                           Text(ex.subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                           const SizedBox(height: 6),
-                          Row(
+                          Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              runSpacing: 4,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -106,6 +138,17 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                                   style: const TextStyle(color: AppColors.primaryCyan, fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${ex.midiSequence.length} notes',
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                              ),
+                              if (ex.fingers != null) ...[
+                                const SizedBox(width: 8),
+                                const Icon(Icons.back_hand_outlined, color: AppColors.textSecondary, size: 13),
+                                const SizedBox(width: 2),
+                                const Text('Fingering', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                              ],
                               if (highScore > 0) ...[
                                 const SizedBox(width: 12),
                                 Icon(Icons.workspace_premium_rounded, color: AppColors.pianoGold, size: 14),
@@ -122,7 +165,13 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                       trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 18),
                       onTap: () async {
                         final provider = context.read<PianoProvider>();
-                        provider.startLearnExercise(ex.id, ex.midiSequence);
+                        provider.startLearnExercise(
+                          ex.id,
+                          ex.midiSequence,
+                          fingers: ex.fingers,
+                          beats: ex.beats,
+                          bpm: ex.bpm,
+                        );
                         await Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const PianoScreen()),

@@ -21,7 +21,8 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
 
   // Keeps the next learn-mode note on screen when the keyboard is wider than the view.
   void _scrollToLearnTarget(PianoProvider provider, List<PianoKeyModel> whiteKeys, double whiteKeyWidth, double viewWidth) {
-    final target = provider.targetLearnMidiNote;
+    // Follow the "Listen" demo while it plays, otherwise the next note to press.
+    final target = provider.demoNote ?? provider.targetLearnMidiNote;
     if (target == null || target == _scrolledLearnTarget) return;
     _scrolledLearnTarget = target;
 
@@ -129,7 +130,7 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
   }
 
   Widget _buildWhiteKey(BuildContext context, PianoProvider provider, PianoKeyModel key) {
-    final isPressed = provider.activePressedKeys.contains(key.midiNote);
+    final isPressed = provider.activePressedKeys.contains(key.midiNote) || provider.demoNote == key.midiNote;
     final isLearnTarget = provider.targetLearnMidiNote == key.midiNote;
     final isHighlighted = _isNoteHighlighted(provider, key.midiNote);
 
@@ -210,7 +211,7 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
       } else {
         double left = (whiteIndex * whiteKeyWidth) - (blackKeyWidth / 2);
 
-        final isPressed = provider.activePressedKeys.contains(key.midiNote);
+        final isPressed = provider.activePressedKeys.contains(key.midiNote) || provider.demoNote == key.midiNote;
         final isLearnTarget = provider.targetLearnMidiNote == key.midiNote;
         final isHighlighted = _isNoteHighlighted(provider, key.midiNote);
 

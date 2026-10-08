@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/piano_provider.dart';
 import '../models/chord_scale_data.dart';
+import '../models/piano_key_model.dart';
 import '../widgets/keyboard_widget.dart';
 import '../widgets/piano_minimap_widget.dart';
 import '../../../core/theme/app_colors.dart';
@@ -223,6 +224,17 @@ class PianoScreen extends StatelessWidget {
     );
   }
 
+  /// "Next: E4 · Finger 3", using the player's English or Sargam label preference.
+  String _nextNoteHint(PianoProvider provider) {
+    if (provider.isDemoPlaying) return 'Listen…';
+    final target = provider.targetLearnMidiNote;
+    if (target == null) return '';
+    final key = PianoKeyModel.fromMidi(target);
+    final name = provider.keyLabelMode == 'sargam' ? key.sargamLabel : key.noteName;
+    final finger = provider.targetLearnFinger;
+    return finger == null ? 'Next: $name' : 'Next: $name · Finger $finger';
+  }
+
   Widget _buildLearnModeBanner(BuildContext context, PianoProvider provider) {
     double progress = provider.totalLearnSteps > 0
         ? (provider.currentLearnStep / provider.totalLearnSteps).clamp(0.0, 1.0)
@@ -266,19 +278,43 @@ class PianoScreen extends StatelessWidget {
               icon: const Icon(Icons.replay_rounded, color: AppColors.learnGreen, size: 20),
               onPressed: () => provider.restartLearnExercise(),
             ),
-          ] else
+          ] else ...[
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.white12,
-                  color: AppColors.learnGreen,
-                  minHeight: 8,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: Colors.white12,
+                      color: AppColors.learnGreen,
+                      minHeight: 8,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _nextNoteHint(provider),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
+            IconButton(
+              tooltip: provider.isDemoPlaying ? 'Stop demo' : 'Listen first',
+              icon: Icon(
+                provider.isDemoPlaying ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded,
+                color: AppColors.learnGreen,
+                size: 26,
+              ),
+              onPressed: () => provider.toggleLearnDemo(),
+            ),
+          ],
           IconButton(
+            tooltip: 'End lesson',
             icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 20),
             onPressed: () => provider.stopLearnExercise(),
           ),
