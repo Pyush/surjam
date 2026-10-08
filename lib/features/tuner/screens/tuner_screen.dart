@@ -5,7 +5,6 @@ import '../providers/tuner_provider.dart';
 import '../widgets/needle_meter_widget.dart';
 import '../widgets/vocal_pitch_graph_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class TunerScreen extends StatelessWidget {
   const TunerScreen({super.key});
@@ -182,9 +181,6 @@ class TunerScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  // 5. ADMOB BANNER
-                  const BannerAdWidget(),
                 ],
               ),
             ),

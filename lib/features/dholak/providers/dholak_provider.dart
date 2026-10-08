@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
+import '../../../core/feedback/tap_feedback.dart';
 import '../models/dholak_model.dart';
 
 class DholakProvider extends ChangeNotifier {
@@ -19,7 +20,7 @@ class DholakProvider extends ChangeNotifier {
   String? get activeStrokeId => _activeStrokeId;
   String? get activeHitHead => _activeHitHead;
 
-  void playStroke(DholakStroke stroke) {
+  void playStroke(DholakStroke stroke, {bool isAutomated = false}) {
     _activeStrokeId = stroke.id;
     if (stroke.isTreble && stroke.isBass) {
       _activeHitHead = 'both';
@@ -30,6 +31,7 @@ class DholakProvider extends ChangeNotifier {
     }
 
     AudioEngine().playDholakStroke(stroke.id);
+    if (!isAutomated) TapFeedback.strike();
     notifyListeners();
 
     Future.delayed(const Duration(milliseconds: 200), () {
@@ -40,12 +42,12 @@ class DholakProvider extends ChangeNotifier {
     });
   }
 
-  void playStrokeById(String id) {
+  void playStrokeById(String id, {bool isAutomated = false}) {
     final stroke = DholakStroke.allStrokes.firstWhere(
       (s) => s.id == id,
       orElse: () => DholakStroke.allStrokes.first,
     );
-    playStroke(stroke);
+    playStroke(stroke, isAutomated: isAutomated);
   }
 
   void setPattern(DholakFolkPattern? pattern) {
@@ -88,7 +90,7 @@ class DholakProvider extends ChangeNotifier {
       if (!_isLoopPlaying || _selectedPattern == null) return;
       final seq = _selectedPattern!.sequence;
       String strokeId = seq[_currentBeatIndex % seq.length];
-      playStrokeById(strokeId);
+      playStrokeById(strokeId, isAutomated: true);
       _currentBeatIndex = (_currentBeatIndex + 1) % seq.length;
     });
   }

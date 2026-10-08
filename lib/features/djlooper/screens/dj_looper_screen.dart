@@ -4,7 +4,6 @@ import '../models/dj_looper_model.dart';
 import '../providers/dj_looper_provider.dart';
 import '../widgets/dj_loop_matrix_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class DJLooperScreen extends StatelessWidget {
   const DJLooperScreen({super.key});
@@ -123,9 +122,6 @@ class DJLooperScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 4),
-
-                  // 3. ADMOB BANNER
-                  const BannerAdWidget(),
                 ],
               ),
             ),

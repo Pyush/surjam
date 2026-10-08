@@ -4,7 +4,6 @@ import '../models/sitar_raga_model.dart';
 import '../providers/sitar_provider.dart';
 import '../widgets/sitar_fretboard_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class SitarScreen extends StatelessWidget {
   const SitarScreen({super.key});
@@ -147,9 +146,6 @@ class SitarScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 4),
-
-                  // BOTTOM ADMOB BANNER
-                  const BannerAdWidget(),
                 ],
               ),
             ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/violin_provider.dart';
 import '../widgets/fingerboard_widget.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class ViolinScreen extends StatelessWidget {
   const ViolinScreen({super.key});
@@ -25,7 +24,6 @@ class ViolinScreen extends StatelessWidget {
                   child: FingerboardWidget(),
                 ),
               ),
-              BannerAdWidget(),
             ],
           ),
         ),

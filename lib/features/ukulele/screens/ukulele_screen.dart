@@ -4,7 +4,6 @@ import '../models/ukulele_model.dart';
 import '../providers/ukulele_provider.dart';
 import '../widgets/ukulele_fretboard_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class UkuleleScreen extends StatelessWidget {
   const UkuleleScreen({super.key});
@@ -100,9 +99,6 @@ class UkuleleScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 4),
-
-                  // 3. ADMOB BANNER
-                  const BannerAdWidget(),
                 ],
               ),
             ),

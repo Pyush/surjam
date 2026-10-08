@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/harmonium_provider.dart';
 import '../widgets/harmonium_keyboard_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class HarmoniumScreen extends StatelessWidget {
   const HarmoniumScreen({super.key});
@@ -59,8 +58,6 @@ class HarmoniumScreen extends StatelessWidget {
                       child: HarmoniumKeyboardWidget(),
                     ),
                   ),
-
-                  const BannerAdWidget(),
                 ],
               ),
             ),

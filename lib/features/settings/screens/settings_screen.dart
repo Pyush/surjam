@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'privacy_policy_screen.dart';
 import '../../piano/providers/piano_provider.dart';
+import '../../../core/storage/storage_service.dart';
 import '../../../core/theme/app_colors.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -41,6 +42,27 @@ class SettingsScreen extends StatelessWidget {
                   );
                 }).toList(),
               ),
+            ),
+
+            const Divider(color: AppColors.darkCardBorder),
+            _sectionHeader('Feel'),
+            StatefulBuilder(
+              builder: (context, setState) {
+                return SwitchListTile(
+                  value: StorageService().getHapticsEnabled(),
+                  activeTrackColor: AppColors.primaryNeon,
+                  secondary: const Icon(Icons.vibration_rounded, color: AppColors.primaryCyan),
+                  title: const Text('Vibrate on drum taps', style: TextStyle(color: Colors.white)),
+                  subtitle: const Text(
+                    'Drum pad, tabla and dholak',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  onChanged: (enabled) async {
+                    await StorageService().setHapticsEnabled(enabled);
+                    setState(() {});
+                  },
+                );
+              },
             ),
 
             const Divider(color: AppColors.darkCardBorder),

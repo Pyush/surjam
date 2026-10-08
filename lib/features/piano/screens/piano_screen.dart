@@ -6,7 +6,6 @@ import '../widgets/keyboard_widget.dart';
 import '../widgets/piano_minimap_widget.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/audio/metronome_service.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class PianoScreen extends StatelessWidget {
   const PianoScreen({super.key});
@@ -28,16 +27,6 @@ class PianoScreen extends StatelessWidget {
         title: const Text('🎹 Piano Studio'),
         centerTitle: true,
         actions: [
-          // Sustain Toggle
-          IconButton(
-            icon: Icon(
-              Icons.pedal_bike_rounded,
-              color: provider.sustain ? AppColors.pianoGold : Colors.white60,
-            ),
-            tooltip: 'Sustain Pedal',
-            onPressed: () => provider.toggleSustain(),
-          ),
-
           // Metronome Toggle
           IconButton(
             icon: Icon(
@@ -82,9 +71,6 @@ class PianoScreen extends StatelessWidget {
                 child: const KeyboardWidget(),
               ),
             ),
-
-            // 6. AdMob Banner Ad
-            const BannerAdWidget(),
           ],
         ),
       ),
@@ -133,6 +119,21 @@ class PianoScreen extends StatelessWidget {
                   onPressed: provider.octave < 6 ? () => provider.setOctave(provider.octave + 1) : null,
                 ),
               ],
+            ),
+
+            // Sustain Pedal Toggle
+            FilterChip(
+              label: const Text('Sustain'),
+              selected: provider.sustain,
+              tooltip: 'Sustain pedal: keys keep sounding after release',
+              selectedColor: AppColors.pianoGold,
+              checkmarkColor: Colors.black,
+              labelStyle: TextStyle(
+                color: provider.sustain ? Colors.black : Colors.white70,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+              onSelected: (_) => provider.toggleSustain(),
             ),
 
             // Scale & Chord Finder Dropdown

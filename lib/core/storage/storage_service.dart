@@ -21,6 +21,15 @@ class StorageService {
     await _prefs?.setString('key_label_mode', mode);
   }
 
+  // Vibration on drum and pad taps
+  bool getHapticsEnabled() {
+    return _prefs?.getBool('haptics_enabled') ?? true;
+  }
+
+  Future<void> setHapticsEnabled(bool enabled) async {
+    await _prefs?.setBool('haptics_enabled', enabled);
+  }
+
   // Saved Recordings
   List<Map<String, dynamic>> getSavedRecordings() {
     final String? raw = _prefs?.getString('saved_recordings');

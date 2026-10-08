@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/xylophone_provider.dart';
 import '../widgets/xylophone_bars_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class XylophoneScreen extends StatelessWidget {
   const XylophoneScreen({super.key});
@@ -75,9 +74,6 @@ class XylophoneScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 4),
-
-                  // Bottom Banner Ad
-                  const BannerAdWidget(),
                 ],
               ),
             ),

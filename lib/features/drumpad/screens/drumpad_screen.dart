@@ -4,7 +4,6 @@ import '../models/drum_pad_model.dart';
 import '../providers/drumpad_provider.dart';
 import '../widgets/pad_grid_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class DrumPadScreen extends StatelessWidget {
   const DrumPadScreen({super.key});
@@ -28,7 +27,6 @@ class DrumPadScreen extends StatelessWidget {
                   child: PadGridWidget(),
                 ),
               ),
-              BannerAdWidget(),
             ],
           ),
         ),

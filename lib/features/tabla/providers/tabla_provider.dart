@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
+import '../../../core/feedback/tap_feedback.dart';
 import '../../../core/storage/storage_service.dart';
 import '../models/taal_model.dart';
 
@@ -109,6 +110,7 @@ class TablaProvider extends ChangeNotifier {
   void triggerBol(String bol, {bool isAutomated = false}) {
     _lastBolHit = bol;
     AudioEngine().playTablaBol(bol);
+    if (!isAutomated) TapFeedback.strike();
 
     // Determine drum animation triggers
     final key = bol.toLowerCase();

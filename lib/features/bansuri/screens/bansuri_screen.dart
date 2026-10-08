@@ -4,7 +4,6 @@ import '../models/bansuri_model.dart';
 import '../providers/bansuri_provider.dart';
 import '../widgets/bansuri_flute_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class BansuriScreen extends StatelessWidget {
   const BansuriScreen({super.key});
@@ -160,9 +159,6 @@ class BansuriScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 4),
-
-                  // 4. ADMOB BANNER
-                  const BannerAdWidget(),
                 ],
               ),
             ),

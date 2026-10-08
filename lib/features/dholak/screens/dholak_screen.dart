@@ -4,7 +4,6 @@ import '../models/dholak_model.dart';
 import '../providers/dholak_provider.dart';
 import '../widgets/dholak_surface_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class DholakScreen extends StatelessWidget {
   const DholakScreen({super.key});
@@ -182,9 +181,6 @@ class DholakScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 4),
-
-                  // 4. ADMOB BANNER
-                  const BannerAdWidget(),
                 ],
               ),
             ),

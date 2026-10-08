@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
+import '../../../core/feedback/tap_feedback.dart';
 import '../models/drum_pad_model.dart';
 
 class DrumPadProvider extends ChangeNotifier {
@@ -17,6 +18,7 @@ class DrumPadProvider extends ChangeNotifier {
   void triggerPad(DrumPadModel pad) {
     _activePadId = pad.id;
     AudioEngine().playDrumPad(pad.soundKey, kit: _selectedKit.id);
+    TapFeedback.strike();
     notifyListeners();
 
     Future.delayed(const Duration(milliseconds: 120), () {

@@ -4,7 +4,6 @@ import '../providers/guitar_provider.dart';
 import '../models/guitar_chord_model.dart';
 import '../widgets/fretboard_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class GuitarScreen extends StatelessWidget {
   const GuitarScreen({super.key});
@@ -95,9 +94,6 @@ class GuitarScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-
-                  // 4. AdMob Banner Ad
-                  const BannerAdWidget(),
                 ],
               ),
             ),

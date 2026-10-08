@@ -5,7 +5,6 @@ import '../models/taal_model.dart';
 import '../widgets/tabla_surface_widget.dart';
 import '../widgets/taal_step_sequencer_widget.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/banner_ad_widget.dart';
 
 class TablaScreen extends StatelessWidget {
   const TablaScreen({super.key});
@@ -54,9 +53,6 @@ class TablaScreen extends StatelessWidget {
                 child: TablaSurfaceWidget(),
               ),
             ),
-
-            // 4. AdMob Banner Ad
-            const BannerAdWidget(),
           ],
         ),
       ),
