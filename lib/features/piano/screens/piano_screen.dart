@@ -61,10 +61,7 @@ class PianoScreen extends StatelessWidget {
             // 3. Learn Mode Banner (if active)
             if (provider.isLearnMode) _buildLearnModeBanner(context, provider),
 
-            // 4. Scale/Chord Info Bar (if active)
-            if (!provider.isLearnMode) _buildInfoStage(provider),
-
-            // 5. Main 3D Piano Keyboard
+            // 4. Main 3D Piano Keyboard
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
@@ -164,9 +161,13 @@ class PianoScreen extends StatelessWidget {
               onSelected: (_) => provider.toggleSustain(),
             ),
 
-            // Scale & Chord Finder Dropdown
+            // Scale & Chord Finder Dropdown with its clear button. The button's space is always
+            // reserved so selecting a scale or chord never changes the layout or the key size.
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 200),
+              constraints: const BoxConstraints(maxWidth: 170),
               child: DropdownButton<String>(
               isExpanded: true,
               dropdownColor: AppColors.darkCard,
@@ -191,46 +192,21 @@ class PianoScreen extends StatelessWidget {
               ],
               ),
             ),
-
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoStage(PianoProvider provider) {
-    if (provider.selectedScale == null && provider.selectedChord == null) {
-      return const SizedBox.shrink();
-    }
-
-    String title = provider.selectedScale != null
-        ? 'Scale: ${provider.selectedScale}'
-        : 'Chord: ${provider.selectedChord}';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.pianoGold.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.pianoGold.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.stars_rounded, color: AppColors.pianoGold, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(color: AppColors.pianoGold, fontWeight: FontWeight.bold, fontSize: 14),
+            Visibility(
+              visible: currentDropdownValue != null,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: IconButton(
+                tooltip: 'Clear highlights',
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 18),
+                onPressed: () => provider.clearHighlights(),
               ),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 18),
-            onPressed: () => provider.clearHighlights(),
-          ),
+            ),
+              ],
+            ),
+
         ],
       ),
     );
