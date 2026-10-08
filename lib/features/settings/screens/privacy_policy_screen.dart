@@ -4,7 +4,12 @@ import '../../../core/theme/app_colors.dart';
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
-  static const List<(String, String)> _sections = [
+  static const String contactEmail = 'androidpyus@gmail.com';
+  static const String webUrl = 'https://pyush.github.io/surjam/privacy-policy.html';
+
+  // docs/privacy-policy.html publishes the same text on the web; test/privacy_policy_test.dart
+  // fails if the two drift apart.
+  static const List<(String, String)> sections = [
     (
       'Overview',
       'SurJam has no accounts and does not run its own servers. The app itself does not collect, '
@@ -35,7 +40,13 @@ class PrivacyPolicyScreen extends StatelessWidget {
     ),
     (
       'Changes',
-      'If this policy changes, the updated version will appear in this screen with a new date.',
+      'If this policy changes, the updated version will be published in the app and on the web with a '
+          'new date.',
+    ),
+    (
+      'Contact',
+      'Questions about this policy or your privacy: $contactEmail. This policy is also published at '
+          '$webUrl.',
     ),
   ];
 
@@ -56,7 +67,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               'Last updated: $lastUpdated',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
-            for (final (heading, body) in _sections) ...[
+            for (final (heading, body) in sections) ...[
               const SizedBox(height: 18),
               Text(
                 heading,
