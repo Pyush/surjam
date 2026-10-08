@@ -99,7 +99,7 @@ class GuitarScreen extends StatelessWidget {
   }
 
   Widget _buildChordPalette(BuildContext context, GuitarProvider provider) {
-    final chords = GuitarChordModel.preloadedChords;
+    final chords = provider.chordsInCategory;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -109,27 +109,58 @@ class GuitarScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.darkCardBorder),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: chords.map((chord) {
-            bool isSelected = provider.selectedChord.name == chord.name;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: ChoiceChip(
-                label: Text(chord.name),
-                selected: isSelected,
-                selectedColor: AppColors.primaryNeon,
-                backgroundColor: AppColors.darkCardBorder,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.black : Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-                onSelected: (_) => provider.selectChord(chord),
-              ),
-            );
-          }).toList(),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: GuitarChordModel.categories.map((category) {
+                final isActive = provider.chordCategory == category;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: ChoiceChip(
+                    label: Text(category),
+                    selected: isActive,
+                    visualDensity: VisualDensity.compact,
+                    selectedColor: AppColors.primaryCyan,
+                    backgroundColor: Colors.transparent,
+                    side: BorderSide(color: isActive ? AppColors.primaryCyan : AppColors.darkCardBorder),
+                    labelStyle: TextStyle(
+                      color: isActive ? Colors.black : Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    onSelected: (_) => provider.setChordCategory(category),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: chords.map((chord) {
+                bool isSelected = provider.selectedChord.name == chord.name;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: ChoiceChip(
+                    label: Text(chord.name),
+                    selected: isSelected,
+                    selectedColor: AppColors.primaryNeon,
+                    backgroundColor: AppColors.darkCardBorder,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.black : Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    onSelected: (_) => provider.selectChord(chord),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }

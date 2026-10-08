@@ -4,12 +4,19 @@ import '../models/drum_pad_model.dart';
 
 class DrumPadProvider extends ChangeNotifier {
   int _activePadId = -1;
+  DrumKit _selectedKit = DrumKit.kits.first;
 
   int get activePadId => _activePadId;
+  DrumKit get selectedKit => _selectedKit;
+
+  void selectKit(DrumKit kit) {
+    _selectedKit = kit;
+    notifyListeners();
+  }
 
   void triggerPad(DrumPadModel pad) {
     _activePadId = pad.id;
-    AudioEngine().playDrumPad(pad.soundKey);
+    AudioEngine().playDrumPad(pad.soundKey, kit: _selectedKit.id);
     notifyListeners();
 
     Future.delayed(const Duration(milliseconds: 120), () {

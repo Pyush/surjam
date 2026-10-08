@@ -17,6 +17,7 @@ import '../../musictheory/screens/ear_training_screen.dart';
 import '../../musictheory/screens/scale_encyclopedia_screen.dart';
 import '../../learn/screens/exercise_list_screen.dart';
 import '../../recorder/screens/recording_library_screen.dart';
+import '../../settings/screens/settings_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/banner_ad_widget.dart';
 
@@ -73,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                   _buildDashboardCard(
                     context,
                     title: '🎸 Guitar & Strum Studio',
-                    subtitle: '6-String Fretboard, 30+ Chords & Strum Trainer',
+                    subtitle: '6-String Fretboard, 45+ Chords & Auto Strum',
                     gradient: const [Color(0xFFE53170), Color(0xFFC70039)],
                     icon: Icons.music_note_rounded,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GuitarScreen())),
@@ -106,7 +107,7 @@ class HomeScreen extends StatelessWidget {
                   _buildDashboardCard(
                     context,
                     title: '🥁 Drum Pad Beat Maker',
-                    subtitle: '4x4 Neoprene pads with Hip-Hop & EDM Drum Kits',
+                    subtitle: '16 pads with Classic, Hip-Hop & EDM Drum Kits',
                     gradient: const [Color(0xFF00E5FF), Color(0xFF0083B0)],
                     icon: Icons.grid_view_rounded,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DrumPadScreen())),
@@ -220,7 +221,7 @@ class HomeScreen extends StatelessWidget {
                   _buildDashboardCard(
                     context,
                     title: '🎙 Local Jam Recordings',
-                    subtitle: 'Listen to and manage your offline recorded sessions',
+                    subtitle: 'Replay and manage your Piano & Tabla jam sessions',
                     gradient: const [Color(0xFF4A4E69), Color(0xFF22223B)],
                     icon: Icons.library_music_rounded,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecordingLibraryScreen())),
@@ -252,31 +253,46 @@ class HomeScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Flexible(
+                child: Row(
+                  children: const [
+                    Text('🎵 ', style: TextStyle(fontSize: 26)),
+                    Flexible(
+                      child: Text(
+                        'SurJam Suite',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Row(
-                children: const [
-                  Text('🎵 ', style: TextStyle(fontSize: 26)),
-                  Text(
-                    'SurJam Suite',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                      color: AppColors.textPrimary,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryNeon.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryNeon),
+                    ),
+                    child: const Text(
+                      'WORKS OFFLINE',
+                      style: TextStyle(color: AppColors.primaryNeon, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.settings_rounded, color: AppColors.textSecondary),
+                    tooltip: 'Settings',
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                  ),
                 ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryNeon.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primaryNeon),
-                ),
-                child: const Text(
-                  '100% OFFLINE',
-                  style: TextStyle(color: AppColors.primaryNeon, fontSize: 11, fontWeight: FontWeight.bold),
-                ),
               ),
             ],
           ),

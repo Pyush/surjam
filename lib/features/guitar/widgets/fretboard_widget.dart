@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/guitar_chord_model.dart';
 import '../providers/guitar_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -12,7 +13,9 @@ class FretboardWidget extends StatelessWidget {
     final chord = provider.selectedChord;
 
     final stringNames = ['E', 'A', 'D', 'G', 'B', 'E'];
-    final openMidi = [40, 45, 50, 55, 59, 64];
+    final openMidi = GuitarChordModel.openStringMidi;
+    // Column 0 is the nut (open / muted); columns 1-4 show frets baseFret..baseFret+3.
+    final baseFret = chord.baseFret;
 
     return Container(
       decoration: BoxDecoration(
@@ -33,7 +36,7 @@ class FretboardWidget extends StatelessWidget {
                 ...List.generate(5, (fretIdx) => Expanded(
                   child: Center(
                     child: Text(
-                      fretIdx == 0 ? 'NUT' : 'FRET $fretIdx',
+                      fretIdx == 0 ? 'NUT' : 'FRET ${baseFret + fretIdx - 1}',
                       style: TextStyle(
                         color: fretIdx == 0 ? AppColors.pianoGold : Colors.white60,
                         fontSize: 10,
@@ -52,6 +55,7 @@ class FretboardWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: List.generate(6, (stringIdx) {
                 int fretNum = chord.frets[stringIdx];
+                int dotColumn = fretNum <= 0 ? fretNum : fretNum - baseFret + 1;
                 int midiNote = (fretNum >= 0) ? openMidi[stringIdx] + fretNum : openMidi[stringIdx];
                 bool isPlucked = provider.pluckedStringIndex == stringIdx;
 
@@ -80,7 +84,7 @@ class FretboardWidget extends StatelessWidget {
 
                         // Frets 0 to 4
                         ...List.generate(5, (fretIdx) {
-                          bool hasDot = (fretNum == fretIdx);
+                          bool hasDot = (dotColumn == fretIdx);
                           bool isMuted = (fretNum == -1 && fretIdx == 0);
 
                           return Expanded(
@@ -121,7 +125,7 @@ class FretboardWidget extends StatelessWidget {
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
-                                        fretIdx == 0 ? 'O' : '$fretIdx',
+                                        fretIdx == 0 ? 'O' : '$fretNum',
                                         style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 11),
                                       ),
                                     ),

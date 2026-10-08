@@ -5,6 +5,7 @@ import '../models/guitar_chord_model.dart';
 
 class GuitarProvider extends ChangeNotifier {
   GuitarChordModel _selectedChord = GuitarChordModel.preloadedChords.first;
+  String _chordCategory = GuitarChordModel.categories.first;
   bool _isAutoStrumming = false;
   int _bpm = 100;
   Timer? _strumTimer;
@@ -13,9 +14,18 @@ class GuitarProvider extends ChangeNotifier {
   int _pluckedStringIndex = -1;
 
   GuitarChordModel get selectedChord => _selectedChord;
+  String get chordCategory => _chordCategory;
+  List<GuitarChordModel> get chordsInCategory =>
+      GuitarChordModel.preloadedChords.where((c) => c.category == _chordCategory).toList();
   bool get isAutoStrumming => _isAutoStrumming;
   int get bpm => _bpm;
   int get pluckedStringIndex => _pluckedStringIndex;
+
+  // Changing category only filters the palette; the current chord stays selected.
+  void setChordCategory(String category) {
+    _chordCategory = category;
+    notifyListeners();
+  }
 
   void selectChord(GuitarChordModel chord) {
     _selectedChord = chord;

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/quiz_model.dart';
 import '../../../core/audio/audio_engine.dart';
@@ -12,35 +13,56 @@ class EarTrainingScreen extends StatefulWidget {
 }
 
 class _EarTrainingScreenState extends State<EarTrainingScreen> {
+  static const Duration _noteGap = Duration(milliseconds: 700);
+
+  final Random _rng = Random();
+  late List<QuizQuestion> _questions = QuizQuestion.generateRound(_rng);
   int _currentQuestionIndex = 0;
   int _score = 0;
+  int _correctCount = 0;
   int? _selectedAnswerIndex;
   bool _answered = false;
+  // Bumped on every play so a melody still playing stops when a new sound starts.
+  int _playToken = 0;
 
-  void _playSound() {
-    final q = QuizQuestion.questions[_currentQuestionIndex];
+  QuizQuestion get _currentQuestion => _questions[_currentQuestionIndex];
+
+  Future<void> _playSound() async {
+    final q = _currentQuestion;
+    final token = ++_playToken;
     if (q.soundBol != null) {
       AudioEngine().playTablaBol(q.soundBol!);
-    } else {
-      AudioEngine().playPianoNote(q.soundMidi);
+      return;
+    }
+    if (q.soundMode == QuizSoundMode.together) {
+      for (final note in q.notes) {
+        AudioEngine().playPianoNote(note);
+      }
+      return;
+    }
+    for (int i = 0; i < q.notes.length; i++) {
+      if (i > 0) await Future.delayed(_noteGap);
+      if (!mounted || token != _playToken) return;
+      AudioEngine().playPianoNote(q.notes[i]);
     }
   }
 
   void _submitAnswer(int optionIndex) {
     if (_answered) return;
 
-    final q = QuizQuestion.questions[_currentQuestionIndex];
+    final q = _currentQuestion;
     setState(() {
       _selectedAnswerIndex = optionIndex;
       _answered = true;
       if (optionIndex == q.correctOptionIndex) {
         _score += 100;
+        _correctCount++;
       }
     });
   }
 
   void _nextQuestion() {
-    if (_currentQuestionIndex + 1 < QuizQuestion.questions.length) {
+    if (_currentQuestionIndex + 1 < _questions.length) {
       setState(() {
         _currentQuestionIndex++;
         _selectedAnswerIndex = null;
@@ -57,14 +79,19 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('🎉 Ear Training Complete!'),
-        content: Text('Your Final Score: $_score Points', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        content: Text(
+          '$_correctCount of ${_questions.length} correct\nYour Final Score: $_score Points',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               setState(() {
+                _questions = QuizQuestion.generateRound(_rng);
                 _currentQuestionIndex = 0;
                 _score = 0;
+                _correctCount = 0;
                 _selectedAnswerIndex = null;
                 _answered = false;
               });
@@ -78,7 +105,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final q = QuizQuestion.questions[_currentQuestionIndex];
+    final q = _currentQuestion;
 
     return Scaffold(
       appBar: AppBar(
@@ -101,7 +128,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Question ${_currentQuestionIndex + 1} / ${QuizQuestion.questions.length}',
+                    'Question ${_currentQuestionIndex + 1} / ${_questions.length}',
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   Text(
@@ -123,6 +150,11 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
               ),
               child: Column(
                 children: [
+                  Text(
+                    q.category.toUpperCase(),
+                    style: const TextStyle(color: AppColors.accentPurple, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     q.questionText,
                     textAlign: TextAlign.center,

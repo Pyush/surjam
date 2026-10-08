@@ -145,12 +145,12 @@ class AudioEngine {
     await _playWavFromBytes(bytes);
   }
 
-  Future<void> playDrumPad(String padType) async {
+  Future<void> playDrumPad(String padType, {String kit = 'classic'}) async {
     if (!_isInitialized) await initialize();
-    final key = padType.toLowerCase();
+    final key = '${kit}_${padType.toLowerCase()}';
     Uint8List? bytes = _drumPadCache[key];
     if (bytes == null) {
-      bytes = SoundSynthesizer.generateDrumPadWav(key);
+      bytes = SoundSynthesizer.generateDrumPadWav(padType, kit: kit);
       _drumPadCache[key] = bytes;
     }
     await _playWavFromBytes(bytes);

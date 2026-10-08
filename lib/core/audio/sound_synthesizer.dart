@@ -365,59 +365,120 @@ class SoundSynthesizer {
     return data.buffer.asUint8List();
   }
 
-  /// Generates Drum Pad Sample
-  static Uint8List generateDrumPadWav(String padType, {double durationSeconds = 0.6}) {
+  /// Generates a drum pad hit. [padType] picks one of the 16 pad voices and [kit]
+  /// ('classic', 'hiphop', 'edm') shapes its character: kick tuning, snare body,
+  /// hat length, 808 sustain and saturation.
+  static Uint8List generateDrumPadWav(String padType, {String kit = 'classic'}) {
+    final bool hipHop = kit == 'hiphop';
+    final bool edm = kit == 'edm';
+    final String voice = padType.toLowerCase();
+
+    final bool longTail = voice == 'sub_kick' || voice == 'bass_drop' || voice == 'crash';
+    final double durationSeconds = longTail ? 1.2 : 0.6;
     final int numSamples = (sampleRate * durationSeconds).toInt();
     final ByteData data = ByteData(44 + numSamples * 2);
     _writeWavHeader(data, numSamples, sampleRate);
 
     final Random rng = Random(42);
+    // Hip-hop gets warm tape-style saturation, EDM a little, classic none.
+    final double drive = hipHop ? 1.8 : (edm ? 1.3 : 1.0);
+
+    double phase = 0.0;
+    double previousNoise = 0.0;
+
+    // Pitch-swept sine drum: frequency glides from [startHz] to [endHz] over [sweepSeconds].
+    double sweptSine(double t, double startHz, double endHz, double sweepSeconds) {
+      final double progress = min(t / sweepSeconds, 1.0);
+      final double freq = startHz * pow(endHz / startHz, progress);
+      phase += 2 * pi * freq / sampleRate;
+      return sin(phase);
+    }
 
     for (int i = 0; i < numSamples; i++) {
       double t = i / sampleRate;
+      double noise = rng.nextDouble() * 2 - 1;
+      // First difference of white noise: a crude high-pass for cymbals and hats.
+      double brightNoise = (noise - previousNoise) * 0.5;
+      previousNoise = noise;
       double sampleValue = 0.0;
 
-      switch (padType.toLowerCase()) {
+      switch (voice) {
         case 'kick':
-          double freq = 120.0 - (90.0 * (t / durationSeconds));
-          double env = exp(-8.0 * t);
-          sampleValue = sin(2 * pi * freq * t) * env * 0.95;
+        case 'kick2':
+          final bool alt = voice == 'kick2';
+          double startHz = (edm ? 150.0 : (hipHop ? 100.0 : 120.0)) * (alt ? 1.2 : 1.0);
+          double endHz = edm ? 48.0 : (hipHop ? 45.0 : 50.0);
+          double decay = (edm ? 9.0 : (hipHop ? 6.0 : 8.0)) * (alt ? 1.4 : 1.0);
+          double click = (t < 0.004) ? noise * (edm ? 0.5 : (hipHop ? 0.3 : 0.1)) : 0.0;
+          sampleValue = sweptSine(t, startHz, endHz, 0.1) * exp(-decay * t) * 0.95 + click;
+          break;
+
+        case 'sub_kick':
+          // 808-style sub with a long tail.
+          double decay = edm ? 2.0 : (hipHop ? 2.5 : 4.0);
+          sampleValue = sweptSine(t, 70.0, 45.0, 0.08) * exp(-decay * t) * 0.95;
+          break;
+
+        case 'bass_drop':
+          // Deep pitch dive.
+          sampleValue = sweptSine(t, 220.0, 30.0, 0.9) * exp(-2.0 * t) * 0.9;
           break;
 
         case 'snare':
-          double toneEnv = exp(-15.0 * t);
-          double noiseEnv = exp(-12.0 * t);
-          double tone = sin(2 * pi * 180.0 * t) * toneEnv * 0.5;
-          double noise = (rng.nextDouble() * 2 - 1) * noiseEnv * 0.5;
-          sampleValue = tone + noise;
-          break;
-
-        case 'hihat':
-        case 'hihat_close':
-          double env = exp(-40.0 * t);
-          sampleValue = (rng.nextDouble() * 2 - 1) * env * 0.7;
-          break;
-
-        case 'hihat_open':
-          double env = exp(-8.0 * t);
-          sampleValue = (rng.nextDouble() * 2 - 1) * env * 0.7;
+        case 'snare2':
+          final bool alt = voice == 'snare2';
+          double toneHz = (edm ? 220.0 : (hipHop ? 200.0 : 180.0)) * (alt ? 1.3 : 1.0);
+          double noiseDecay = (edm ? 14.0 : (hipHop ? 9.0 : 12.0)) * (alt ? 1.5 : 1.0);
+          double tone = sin(2 * pi * toneHz * t) * exp(-15.0 * t) * (hipHop ? 0.6 : 0.5);
+          sampleValue = tone + noise * exp(-noiseDecay * t) * 0.5;
+          if (edm) {
+            // EDM snares are layered with a clap.
+            sampleValue += _clap(t, noise) * 0.4;
+          }
           break;
 
         case 'clap':
-          double env = exp(-18.0 * t);
-          double noise = (rng.nextDouble() * 2 - 1) * env;
-          sampleValue = noise * 0.8;
+          sampleValue = _clap(t, noise) * (hipHop ? 0.7 : 0.85);
           break;
 
-        case 'tom':
-          double freq = 150.0 - (40.0 * (t / durationSeconds));
-          double env = exp(-7.0 * t);
-          sampleValue = sin(2 * pi * freq * t) * env * 0.85;
+        case 'rimshot':
+          sampleValue = (sin(2 * pi * 1700 * t) * 0.6 + sin(2 * pi * 420 * t) * 0.5 + noise * 0.3) * exp(-60.0 * t);
+          break;
+
+        case 'hihat_close':
+          sampleValue = brightNoise * exp(-(edm ? 30.0 : (hipHop ? 50.0 : 40.0)) * t) * 1.2;
+          break;
+
+        case 'hihat_open':
+          sampleValue = brightNoise * exp(-(edm ? 5.0 : (hipHop ? 9.0 : 7.0)) * t) * 1.0;
           break;
 
         case 'crash':
-          double env = exp(-4.0 * t);
-          sampleValue = (rng.nextDouble() * 2 - 1) * env * 0.75;
+          double metal = sin(2 * pi * 3150 * t) * 0.15 + sin(2 * pi * 4720 * t) * 0.1;
+          sampleValue = (brightNoise * 1.2 + metal) * exp(-(edm ? 2.5 : 3.5) * t) * 0.8;
+          break;
+
+        case 'shaker':
+          double attack = min(t / 0.015, 1.0);
+          sampleValue = brightNoise * attack * exp(-30.0 * t) * 1.1;
+          break;
+
+        case 'tom_high':
+          sampleValue = sweptSine(t, 220.0, 170.0, 0.3) * exp(-8.0 * t) * 0.85;
+          break;
+
+        case 'tom_low':
+        case 'tom':
+          sampleValue = sweptSine(t, 130.0, 95.0, 0.3) * exp(-7.0 * t) * 0.85;
+          break;
+
+        case 'cowbell':
+          double square(double hz) => sin(2 * pi * hz * t) >= 0 ? 1.0 : -1.0;
+          sampleValue = (square(540) + square(800)) * 0.22 * exp(-15.0 * t);
+          break;
+
+        case 'conga':
+          sampleValue = sweptSine(t, 340.0, 300.0, 0.05) * exp(-12.0 * t) * 0.8;
           break;
 
         default:
@@ -426,10 +487,27 @@ class SoundSynthesizer {
           break;
       }
 
+      if (drive > 1.0) {
+        sampleValue = _tanh(sampleValue * drive) / _tanh(drive);
+      }
+
       sampleValue = sampleValue.clamp(-1.0, 1.0);
       data.setInt16(44 + i * 2, (sampleValue * 32767).toInt(), Endian.little);
     }
     return data.buffer.asUint8List();
+  }
+
+  /// Hand clap: three quick noise bursts followed by a short tail.
+  static double _clap(double t, double noise) {
+    for (final burst in const [0.0, 0.011, 0.022]) {
+      if (t >= burst && t < burst + 0.008) return noise * exp(-200.0 * (t - burst));
+    }
+    return t >= 0.022 ? noise * exp(-18.0 * (t - 0.022)) : 0.0;
+  }
+
+  static double _tanh(double x) {
+    final double e2x = exp(2 * x.clamp(-10.0, 10.0));
+    return (e2x - 1) / (e2x + 1);
   }
 
   /// Generates Dholak Folk Percussion PCM WAV bytes
