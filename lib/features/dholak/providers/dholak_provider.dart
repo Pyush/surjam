@@ -3,8 +3,14 @@ import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../../../core/feedback/tap_feedback.dart';
 import '../models/dholak_model.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
+import '../../../core/lifecycle/playback_guard.dart';
 
-class DholakProvider extends ChangeNotifier {
+class DholakProvider extends ChangeNotifier with SafeChangeNotifier {
+  DholakProvider() {
+    PlaybackGuard.register(this, stopLoop);
+  }
+
   DholakFolkPattern? _selectedPattern;
   bool _isLoopPlaying = false;
   int _currentBeatIndex = 0;
@@ -104,6 +110,7 @@ class DholakProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    PlaybackGuard.unregister(this);
     _loopTimer?.cancel();
     super.dispose();
   }

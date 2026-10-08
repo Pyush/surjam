@@ -2,8 +2,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../models/ukulele_model.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
 
-class UkuleleProvider extends ChangeNotifier {
+class UkuleleProvider extends ChangeNotifier with SafeChangeNotifier {
   UkuleleChord _selectedChord = UkuleleChord.popularChords[0]; // C Major
   int? _activePluckedString;
   bool _isStrumming = false;

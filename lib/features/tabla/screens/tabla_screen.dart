@@ -6,8 +6,21 @@ import '../widgets/tabla_surface_widget.dart';
 import '../widgets/taal_step_sequencer_widget.dart';
 import '../../../core/theme/app_colors.dart';
 
+/// The tabla's state lives only while this screen is open, so its taal loop stops when you leave.
 class TablaScreen extends StatelessWidget {
   const TablaScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => TablaProvider(),
+      child: const _TablaView(),
+    );
+  }
+}
+
+class _TablaView extends StatelessWidget {
+  const _TablaView();
 
   @override
   Widget build(BuildContext context) {
@@ -187,6 +200,6 @@ class TablaScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).whenComplete(textController.dispose);
   }
 }

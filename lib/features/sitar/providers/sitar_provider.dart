@@ -2,8 +2,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../models/sitar_raga_model.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
 
-class SitarProvider extends ChangeNotifier {
+class SitarProvider extends ChangeNotifier with SafeChangeNotifier {
   SitarRagaModel _selectedRaga = SitarRagaModel.preloadedRagas[0]; // Yaman
   int _rootMidi = 60; // C4 Sa
   int? _activeFret;

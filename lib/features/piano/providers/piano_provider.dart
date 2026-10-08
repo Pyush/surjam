@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../../../core/storage/storage_service.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
+import '../../../core/lifecycle/playback_guard.dart';
 
 class NoteEvent {
   final int midiNote;
@@ -17,7 +19,7 @@ class NoteEvent {
       NoteEvent(json['midiNote'], json['timestampMs']);
 }
 
-class PianoProvider extends ChangeNotifier {
+class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
   int _octave = 4; // Default starting octave (Middle C = 60)
   bool _sustain = false;
   String _keyLabelMode = 'english'; // 'english', 'sargam', 'none'
@@ -54,6 +56,7 @@ class PianoProvider extends ChangeNotifier {
   Timer? _demoTimer;
 
   PianoProvider() {
+    PlaybackGuard.register(this, stopLearnDemo);
     _keyLabelMode = StorageService().getKeyLabelMode();
   }
 
@@ -269,6 +272,21 @@ class PianoProvider extends ChangeNotifier {
     _demoTimer = Timer(duration, () => _playDemoNote(index + 1));
   }
 
+  void stopLearnDemo() {
+    if (!_isDemoPlaying) return;
+    _stopDemo();
+    notifyListeners();
+  }
+
+  /// The piano screen closed: stop the demo and keep an unfinished recording rather than
+  /// losing it. (The provider itself lives for the whole app session.)
+  Future<void> onScreenClosed() async {
+    stopLearnDemo();
+    if (_isRecording) {
+      await stopRecordingAndSave(StorageService.autoSavedRecordingTitle('Piano jam'));
+    }
+  }
+
   void _stopDemo() {
     _demoTimer?.cancel();
     _demoTimer = null;
@@ -288,6 +306,7 @@ class PianoProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    PlaybackGuard.unregister(this);
     _stopDemo();
     super.dispose();
   }

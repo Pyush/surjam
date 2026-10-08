@@ -2,8 +2,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../models/dj_looper_model.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
+import '../../../core/lifecycle/playback_guard.dart';
 
-class DJLooperProvider extends ChangeNotifier {
+class DJLooperProvider extends ChangeNotifier with SafeChangeNotifier {
+  DJLooperProvider() {
+    PlaybackGuard.register(this, stopAll);
+  }
+
   DJSoundPack _selectedPack = DJSoundPack.soundPacks[0]; // Electro House
   final Set<String> _activeTrackIds = {};
   int _masterBpm = 124;
@@ -108,6 +114,7 @@ class DJLooperProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    PlaybackGuard.unregister(this);
     _bpmPulseTimer?.cancel();
     super.dispose();
   }

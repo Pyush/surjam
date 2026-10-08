@@ -2,8 +2,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../models/bansuri_model.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
 
-class BansuriProvider extends ChangeNotifier {
+class BansuriProvider extends ChangeNotifier with SafeChangeNotifier {
   BansuriPreset _selectedPreset = BansuriPreset.preloadedPresets[0]; // C Natural
   List<double> _holeCoverages = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]; // All closed = Sa
   int _octaveRegister = 1; // 0: Mandra (-12), 1: Madhya (0), 2: Taar (+12)

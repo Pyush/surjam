@@ -31,6 +31,14 @@ class StorageService {
   }
 
   // Saved Recordings
+
+  /// Title for a recording saved automatically because its screen was closed, e.g. "Piano jam 14:05".
+  static String autoSavedRecordingTitle(String prefix) {
+    final now = DateTime.now();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '$prefix ${two(now.hour)}:${two(now.minute)}';
+  }
+
   List<Map<String, dynamic>> getSavedRecordings() {
     final String? raw = _prefs?.getString('saved_recordings');
     if (raw == null || raw.isEmpty) return [];

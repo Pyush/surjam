@@ -8,8 +8,44 @@ import '../widgets/piano_minimap_widget.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/audio/metronome_service.dart';
 
-class PianoScreen extends StatelessWidget {
+/// The piano's state is global (Learn and Settings use it), so whatever this screen started is
+/// stopped explicitly when it closes.
+class PianoScreen extends StatefulWidget {
   const PianoScreen({super.key});
+
+  @override
+  State<PianoScreen> createState() => _PianoScreenState();
+}
+
+class _PianoScreenState extends State<PianoScreen> {
+  late final PianoProvider _piano;
+  late final MetronomeService _metronome;
+
+  @override
+  void initState() {
+    super.initState();
+    _piano = context.read<PianoProvider>();
+    _metronome = context.read<MetronomeService>();
+  }
+
+  @override
+  void dispose() {
+    final piano = _piano;
+    final metronome = _metronome;
+    // After the route is torn down, so listeners being removed are not notified mid-unmount.
+    Future.microtask(() {
+      metronome.stop();
+      piano.onScreenClosed();
+    });
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const _PianoView();
+}
+
+class _PianoView extends StatelessWidget {
+  const _PianoView();
 
   @override
   Widget build(BuildContext context) {
@@ -389,6 +425,6 @@ class PianoScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).whenComplete(textController.dispose);
   }
 }

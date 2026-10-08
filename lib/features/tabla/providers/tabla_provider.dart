@@ -4,6 +4,8 @@ import '../../../core/audio/audio_engine.dart';
 import '../../../core/feedback/tap_feedback.dart';
 import '../../../core/storage/storage_service.dart';
 import '../models/taal_model.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
+import '../../../core/lifecycle/playback_guard.dart';
 
 class TablaStrokeEvent {
   final String bol;
@@ -16,7 +18,11 @@ class TablaStrokeEvent {
   };
 }
 
-class TablaProvider extends ChangeNotifier {
+class TablaProvider extends ChangeNotifier with SafeChangeNotifier {
+  TablaProvider() {
+    PlaybackGuard.register(this, stopTaalPlayer);
+  }
+
   TaalModel _selectedTaal = TaalModel.preloadedTaals.first;
   bool _isPlayingTaal = false;
   int _bpm = 120;
@@ -176,7 +182,12 @@ class TablaProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    PlaybackGuard.unregister(this);
     _taalTimer?.cancel();
+    // Closing the screen mid-recording keeps the take instead of losing it.
+    if (_isRecording) {
+      stopRecordingAndSave(StorageService.autoSavedRecordingTitle('Tabla jam'));
+    }
     super.dispose();
   }
 }

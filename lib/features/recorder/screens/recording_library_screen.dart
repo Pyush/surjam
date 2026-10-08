@@ -4,6 +4,7 @@ import '../../../core/storage/storage_service.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/banner_ad_widget.dart';
+import '../../../core/lifecycle/playback_guard.dart';
 
 class RecordingLibraryScreen extends StatefulWidget {
   const RecordingLibraryScreen({super.key});
@@ -20,6 +21,7 @@ class _RecordingLibraryScreenState extends State<RecordingLibraryScreen> {
   @override
   void initState() {
     super.initState();
+    PlaybackGuard.register(this, _stopPlayback);
     _loadRecordings();
   }
 
@@ -85,6 +87,7 @@ class _RecordingLibraryScreenState extends State<RecordingLibraryScreen> {
 
   @override
   void dispose() {
+    PlaybackGuard.unregister(this);
     _stopPlayback();
     super.dispose();
   }

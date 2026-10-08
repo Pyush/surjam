@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../../../core/feedback/tap_feedback.dart';
 import '../models/drum_pad_model.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
 
-class DrumPadProvider extends ChangeNotifier {
+class DrumPadProvider extends ChangeNotifier with SafeChangeNotifier {
   int _activePadId = -1;
   DrumKit _selectedKit = DrumKit.kits.first;
 

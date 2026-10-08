@@ -1,8 +1,14 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
+import '../../../core/lifecycle/playback_guard.dart';
 
-class HarmoniumProvider extends ChangeNotifier {
+class HarmoniumProvider extends ChangeNotifier with SafeChangeNotifier {
+  HarmoniumProvider() {
+    PlaybackGuard.register(this, stopDrone);
+  }
+
   int _octave = 4;
   String _activeDrone = 'none'; // 'sa', 'pa', 'dha', 'none'
   final Set<int> _activeKeys = {};
@@ -50,6 +56,7 @@ class HarmoniumProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    PlaybackGuard.unregister(this);
     if (_activeDrone != 'none') AudioEngine().stopDrone();
     super.dispose();
   }

@@ -1,8 +1,14 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'audio_engine.dart';
+import '../lifecycle/safe_change_notifier.dart';
+import '../lifecycle/playback_guard.dart';
 
-class MetronomeService extends ChangeNotifier {
+class MetronomeService extends ChangeNotifier with SafeChangeNotifier {
+  MetronomeService() {
+    PlaybackGuard.register(this, stop);
+  }
+
   Timer? _timer;
   bool _isPlaying = false;
   int _bpm = 120;
@@ -74,6 +80,7 @@ class MetronomeService extends ChangeNotifier {
 
   @override
   void dispose() {
+    PlaybackGuard.unregister(this);
     _timer?.cancel();
     super.dispose();
   }

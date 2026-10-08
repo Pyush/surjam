@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
 
-class ViolinProvider extends ChangeNotifier {
+class ViolinProvider extends ChangeNotifier with SafeChangeNotifier {
   int _activeStringIndex = -1;
   int _activeMidiNote = -1;
 

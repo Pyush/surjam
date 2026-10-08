@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
 
-class XylophoneProvider extends ChangeNotifier {
+class XylophoneProvider extends ChangeNotifier with SafeChangeNotifier {
   int? _activeKeyMidi;
   bool _useSargam = false;
 

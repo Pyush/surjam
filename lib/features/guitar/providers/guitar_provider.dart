@@ -2,8 +2,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../models/guitar_chord_model.dart';
+import '../../../core/lifecycle/safe_change_notifier.dart';
+import '../../../core/lifecycle/playback_guard.dart';
 
-class GuitarProvider extends ChangeNotifier {
+class GuitarProvider extends ChangeNotifier with SafeChangeNotifier {
+  GuitarProvider() {
+    PlaybackGuard.register(this, stopAutoStrum);
+  }
+
   GuitarChordModel _selectedChord = GuitarChordModel.preloadedChords.first;
   String _chordCategory = GuitarChordModel.categories.first;
   bool _isAutoStrumming = false;
@@ -111,6 +117,7 @@ class GuitarProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    PlaybackGuard.unregister(this);
     _strumTimer?.cancel();
     super.dispose();
   }
