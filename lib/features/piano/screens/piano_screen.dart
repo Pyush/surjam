@@ -52,14 +52,24 @@ class PianoScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // 1. Sleek Floating Toolbar
-            _buildControlBar(context, provider, currentDropdownValue),
+            // 1. Sleek Floating Toolbar. During a lesson the progress panel takes its place in the
+            // same space (the toolbar stays laid out underneath), so the keys never change size.
+            Stack(
+              children: [
+                Visibility(
+                  visible: !provider.isLearnMode,
+                  maintainSize: true,
+                  maintainAnimation: true,
+                  maintainState: true,
+                  child: _buildControlBar(context, provider, currentDropdownValue),
+                ),
+                if (provider.isLearnMode)
+                  Positioned.fill(child: _buildLearnModeBanner(context, provider)),
+              ],
+            ),
 
             // 2. 88-Key Mini-Map Navigator Strip
             const PianoMinimapWidget(),
-
-            // 3. Learn Mode Banner (if active)
-            if (provider.isLearnMode) _buildLearnModeBanner(context, provider),
 
             // 4. Main 3D Piano Keyboard
             Expanded(
@@ -76,6 +86,7 @@ class PianoScreen extends StatelessWidget {
 
   Widget _buildControlBar(BuildContext context, PianoProvider provider, String? currentDropdownValue) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -218,13 +229,15 @@ class PianoScreen extends StatelessWidget {
         : 0.0;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      // Same margin and corners as the toolbar card it replaces.
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.learnGreen.withValues(alpha: 0.3), AppColors.darkCard],
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.learnGreen),
       ),
       child: Row(

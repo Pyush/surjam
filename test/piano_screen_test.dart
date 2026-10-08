@@ -41,12 +41,12 @@ void main() {
       final initial = tester.getRect(keyboard);
 
       final clearButton = find.byTooltip('Clear highlights');
-      expect(tester.widget<Visibility>(find.ancestor(of: clearButton, matching: find.byType(Visibility))).visible, isFalse);
+      expect(tester.widget<Visibility>(find.ancestor(of: clearButton, matching: find.byType(Visibility)).first).visible, isFalse);
 
       piano.selectScale(MusicTheoryData.scales.keys.first);
       await tester.pump();
       expect(tester.getRect(keyboard), equals(initial));
-      expect(tester.widget<Visibility>(find.ancestor(of: clearButton, matching: find.byType(Visibility))).visible, isTrue);
+      expect(tester.widget<Visibility>(find.ancestor(of: clearButton, matching: find.byType(Visibility)).first).visible, isTrue);
 
       piano.selectChord(MusicTheoryData.chords.keys.last);
       await tester.pump();
@@ -57,6 +57,27 @@ void main() {
       expect(piano.selectedScale, isNull);
       expect(piano.selectedChord, isNull);
       expect(tester.getRect(keyboard), equals(initial));
+
+      // A lesson shows its progress in the toolbar's place, also without moving the keys.
+      piano.startLearnExercise('ex_layout', [60, 62]);
+      await tester.pump();
+      expect(tester.getRect(keyboard), equals(initial));
+      expect(find.text('Score: 0'), findsOneWidget);
+      expect(find.byTooltip('Clear highlights').hitTestable(), findsNothing); // toolbar hidden
+
+      piano.onNoteDown(60);
+      piano.onNoteDown(62); // completes the lesson: result view
+      await tester.pump();
+      expect(piano.isLearnComplete, isTrue);
+      expect(tester.getRect(keyboard), equals(initial));
+
+      piano.stopLearnExercise();
+      await tester.pump();
+      expect(tester.getRect(keyboard), equals(initial));
+
+      // Let audio timers from the key presses finish.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 31));
     });
   }
 }
