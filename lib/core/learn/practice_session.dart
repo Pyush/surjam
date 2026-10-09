@@ -1,3 +1,4 @@
+import '../progress/practice_tracker.dart';
 import '../storage/storage_service.dart';
 
 /// A "play the highlighted target" exercise on any instrument: chords on the guitar, bols on
@@ -31,7 +32,10 @@ class PracticeSession {
     if (played.toLowerCase() == targets[_step].toLowerCase()) {
       _score += pointsPerCorrect;
       _step++;
-      if (isComplete) StorageService().saveExerciseScore(lessonId, _score);
+      if (isComplete) {
+        StorageService().saveExerciseScore(lessonId, _score);
+        PracticeTracker.instance.onLessonCompleted();
+      }
       return true;
     }
     _mistakes++;

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'privacy_policy_screen.dart';
 import '../../piano/providers/piano_provider.dart';
 import '../../../core/storage/storage_service.dart';
+import '../../../core/progress/practice_tracker.dart';
 import '../../../core/theme/app_colors.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -41,6 +42,31 @@ class SettingsScreen extends StatelessWidget {
                     title: Text(entry.value, style: const TextStyle(color: Colors.white)),
                   );
                 }).toList(),
+              ),
+            ),
+
+            const Divider(color: AppColors.darkCardBorder),
+            _sectionHeader('Daily practice goal'),
+            ListenableBuilder(
+              listenable: PracticeTracker.instance,
+              builder: (context, _) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final minutes in PracticeTracker.goalChoices)
+                      ChoiceChip(
+                        label: Text('$minutes min'),
+                        selected: PracticeTracker.instance.dailyGoalMinutes == minutes,
+                        selectedColor: AppColors.learnGreen,
+                        labelStyle: TextStyle(
+                          color: PracticeTracker.instance.dailyGoalMinutes == minutes ? Colors.black : Colors.white70,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        onSelected: (_) => PracticeTracker.instance.setDailyGoalMinutes(minutes),
+                      ),
+                  ],
+                ),
               ),
             ),
 

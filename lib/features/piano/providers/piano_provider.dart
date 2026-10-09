@@ -4,6 +4,7 @@ import '../../../core/audio/audio_engine.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/lifecycle/safe_change_notifier.dart';
 import '../../../core/lifecycle/playback_guard.dart';
+import '../../../core/progress/practice_tracker.dart';
 
 class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
   int _octave = 4; // Default starting octave (Middle C = 60)
@@ -187,6 +188,7 @@ class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
     _isLearnComplete = true;
     if (_learnExerciseId != null) {
       StorageService().saveExerciseScore(_learnExerciseId!, _learnScore);
+      PracticeTracker.instance.onLessonCompleted();
     }
   }
 

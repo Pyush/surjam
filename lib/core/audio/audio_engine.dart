@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../recording/jam_recorder.dart';
+import '../progress/practice_tracker.dart';
 import 'sound_event.dart';
 
 /// Plays synthesized instrument sounds.
@@ -69,6 +70,7 @@ class AudioEngine {
   /// Plays [sound], and adds it to the recording if one is running.
   Future<void> play(SoundEvent sound) {
     JamRecorder.instance.capture(sound);
+    PracticeTracker.instance.onSoundPlayed();
     return playWithoutRecording(sound);
   }
 

@@ -9,6 +9,7 @@ import 'core/audio/metronome_service.dart';
 import 'core/ads/admob_service.dart';
 import 'core/storage/storage_service.dart';
 import 'core/lifecycle/playback_guard.dart';
+import 'core/progress/practice_tracker.dart';
 import 'features/piano/providers/piano_provider.dart';
 import 'features/home/screens/home_screen.dart';
 
@@ -26,6 +27,7 @@ void main() async {
   // Only local settings are needed before the first frame. Audio players and the ads SDK
   // (which can wait on the network for seconds) start in the background.
   await StorageService().initialize();
+  await PracticeTracker.instance.initialize();
   unawaited(AudioEngine().initialize());
   unawaited(AdMobService().initialize());
 

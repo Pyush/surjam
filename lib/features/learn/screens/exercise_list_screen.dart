@@ -9,6 +9,7 @@ import '../../piano/screens/piano_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../shared/widgets/banner_ad_widget.dart';
+import '../../../shared/widgets/lesson_stars.dart';
 
 class ExerciseListScreen extends StatefulWidget {
   const ExerciseListScreen({super.key});
@@ -183,7 +184,7 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                               ],
                               if (highScore > 0) ...[
                                 const SizedBox(width: 12),
-                                Icon(Icons.workspace_premium_rounded, color: AppColors.pianoGold, size: 14),
+                                LessonStars(lessonStars(highScore, ex.midiSequence.length)),
                                 const SizedBox(width: 4),
                                 Text(
                                   'High Score: $highScore',
@@ -273,7 +274,7 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                     Text('${lesson.targets.length} $unit', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
                     if (highScore > 0) ...[
                       const SizedBox(width: 12),
-                      const Icon(Icons.workspace_premium_rounded, color: AppColors.pianoGold, size: 14),
+                      LessonStars(lessonStars(highScore, lesson.targets.length)),
                       const SizedBox(width: 4),
                       Text(
                         'High Score: $highScore',

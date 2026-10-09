@@ -18,6 +18,8 @@ import '../../musictheory/screens/scale_encyclopedia_screen.dart';
 import '../../learn/screens/exercise_list_screen.dart';
 import '../../recorder/screens/recording_library_screen.dart';
 import '../../settings/screens/settings_screen.dart';
+import '../../progress/screens/progress_screen.dart';
+import '../../../core/progress/practice_tracker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/banner_ad_widget.dart';
 
@@ -297,9 +299,37 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Piano, Tabla, Guitar, Drum Pad, Harmonium & Violin',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          // Practice streak and today's goal; opens the progress screen.
+          ListenableBuilder(
+            listenable: PracticeTracker.instance,
+            builder: (context, _) {
+              final tracker = PracticeTracker.instance;
+              final streak = tracker.currentStreak;
+              return InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProgressScreen())),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        streak > 0 ? '🔥 $streak-day streak' : '🔥 Start a streak today',
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      Flexible(
+                        child: Text(
+                          '  ·  ${tracker.today.minutes}/${tracker.dailyGoalMinutes} min today',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 18),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
