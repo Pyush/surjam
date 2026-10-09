@@ -5,14 +5,24 @@ import '../models/guitar_chord_model.dart';
 import '../widgets/fretboard_widget.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/record_button.dart';
+import '../../../shared/widgets/practice_panel.dart';
+import '../../../core/learn/practice_session.dart';
 
 class GuitarScreen extends StatelessWidget {
-  const GuitarScreen({super.key});
+  /// Opens straight into chord practice when set (from the Learn hub).
+  final ({String id, List<String> chords})? practice;
+
+  const GuitarScreen({super.key, this.practice});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => GuitarProvider(),
+      create: (_) {
+        final provider = GuitarProvider();
+        final lesson = practice;
+        if (lesson != null) provider.startPractice(lesson.id, lesson.chords);
+        return provider;
+      },
       child: Consumer<GuitarProvider>(
         builder: (context, provider, child) {
           final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
@@ -45,6 +55,12 @@ class GuitarScreen extends StatelessWidget {
               child: Column(
                 children: [
                   // 1. Chord Selector Palette
+                  if (provider.practice != null)
+                    PracticePanel(
+                      session: provider.practice!,
+                      onRestart: provider.restartPractice,
+                      onClose: provider.stopPractice,
+                    ),
                   _buildChordPalette(context, provider),
 
                   // 2. Main Fretboard View, with the strum buttons beside it in landscape
@@ -105,6 +121,23 @@ class GuitarScreen extends StatelessWidget {
     );
   }
 
+  // The chord row scrolls sideways; bring the next practice chord on screen.
+  // Keyed by session and step, so a new or restarted lesson scrolls again.
+  static String? _lastScrolledStep;
+  void _scrollToPracticeTarget(PracticeSession? practice) {
+    final target = practice?.target;
+    if (practice == null || target == null) return;
+    final stepKey = '${identityHashCode(practice)}:${practice.step}';
+    if (stepKey == _lastScrolledStep) return;
+    _lastScrolledStep = stepKey;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final chip = GlobalObjectKey(target).currentContext;
+      if (chip != null) {
+        Scrollable.ensureVisible(chip, alignment: 0.5, duration: const Duration(milliseconds: 250));
+      }
+    });
+  }
+
   Widget _buildStrumButton(GuitarProvider provider, {required bool isDown}) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
@@ -120,6 +153,7 @@ class GuitarScreen extends StatelessWidget {
 
   Widget _buildChordPalette(BuildContext context, GuitarProvider provider) {
     final chords = provider.chordsInCategory;
+    _scrollToPracticeTarget(provider.practice);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -163,13 +197,17 @@ class GuitarScreen extends StatelessWidget {
             child: Row(
               children: chords.map((chord) {
                 bool isSelected = provider.selectedChord.name == chord.name;
+                final isTarget = provider.practice?.target == chord.name;
                 return Padding(
+                  // Lets the row scroll the practice target into view.
+                  key: GlobalObjectKey(chord.name),
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
                   child: ChoiceChip(
                     label: Text(chord.name),
                     selected: isSelected,
                     selectedColor: AppColors.primaryNeon,
-                    backgroundColor: AppColors.darkCardBorder,
+                    backgroundColor: isTarget ? AppColors.learnGreen.withValues(alpha: 0.25) : AppColors.darkCardBorder,
+                    side: isTarget ? const BorderSide(color: AppColors.learnGreen, width: 2.5) : null,
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.black : Colors.white,
                       fontWeight: FontWeight.bold,

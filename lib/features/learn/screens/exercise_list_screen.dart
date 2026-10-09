@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/exercise_model.dart';
+import '../models/practice_lesson.dart';
+import '../../guitar/screens/guitar_screen.dart';
+import '../../tabla/screens/tabla_screen.dart';
 import '../../piano/providers/piano_provider.dart';
 import '../../piano/screens/piano_screen.dart';
 import '../../../core/theme/app_colors.dart';
@@ -15,6 +18,15 @@ class ExerciseListScreen extends StatefulWidget {
 }
 
 class _ExerciseListScreenState extends State<ExerciseListScreen> {
+  static const List<String> _instruments = ['Piano', PracticeLesson.guitar, PracticeLesson.tabla];
+
+  static const Map<String, String> _instructions = {
+    'Piano': 'Pick a lesson. The keyboard lights up each key and waits for you to press it. Tap ▶ to hear it first.',
+    PracticeLesson.guitar: 'Pick a lesson. The next chord is outlined in green: select it, then strum.',
+    PracticeLesson.tabla: 'Pick a lesson. The next bol is outlined in green: tap it to play the theka in order.',
+  };
+
+  String _instrument = 'Piano';
   String _category = ExerciseModel.categories.first;
 
   @override
@@ -56,14 +68,34 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Pick a lesson. The keyboard lights up each key and waits for you to press it. Tap ▶ to hear it first.',
+                  Text(
+                    _instructions[_instrument]!,
                     style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                   ),
                 ],
               ),
             ),
 
+            // Instrument selector
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: SegmentedButton<String>(
+                segments: [
+                  for (final instrument in _instruments)
+                    ButtonSegment(value: instrument, label: Text(instrument)),
+                ],
+                selected: {_instrument},
+                showSelectedIcon: false,
+                style: SegmentedButton.styleFrom(
+                  selectedBackgroundColor: AppColors.learnGreen,
+                  selectedForegroundColor: Colors.black,
+                  foregroundColor: Colors.white70,
+                ),
+                onSelectionChanged: (selection) => setState(() => _instrument = selection.first),
+              ),
+            ),
+
+            if (_instrument == 'Piano') ...[
             // Category filter
             SizedBox(
               height: 44,
@@ -184,11 +216,90 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                 },
               ),
             ),
+            ] else
+              Expanded(child: _buildPracticeLessonList(PracticeLesson.forInstrument(_instrument))),
 
             const BannerAdWidget(),
           ],
         ),
       ),
+    );
+  }
+
+  /// Guitar chord changes and tabla thekas open their instrument in practice mode.
+  Widget _buildPracticeLessonList(List<PracticeLesson> lessons) {
+    final unit = _instrument == PracticeLesson.guitar ? 'chords' : 'bols';
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      itemCount: lessons.length,
+      itemBuilder: (context, index) {
+        final lesson = lessons[index];
+        final highScore = StorageService().getExerciseScore(lesson.id);
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.learnGreen.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Text(lesson.instrument == PracticeLesson.guitar ? '🎸' : '🪘', style: const TextStyle(fontSize: 18)),
+            ),
+            title: Text(
+              lesson.title,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(lesson.subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  runSpacing: 4,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
+                      child: Text(
+                        lesson.difficulty,
+                        style: const TextStyle(color: AppColors.primaryCyan, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('${lesson.targets.length} $unit', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                    if (highScore > 0) ...[
+                      const SizedBox(width: 12),
+                      const Icon(Icons.workspace_premium_rounded, color: AppColors.pianoGold, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        'High Score: $highScore',
+                        style: const TextStyle(color: AppColors.pianoGold, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 18),
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => lesson.instrument == PracticeLesson.guitar
+                      ? GuitarScreen(practice: (id: lesson.id, chords: lesson.targets))
+                      : TablaScreen(practice: (id: lesson.id, bols: lesson.targets)),
+                ),
+              );
+              // Show any new high score.
+              if (mounted) setState(() {});
+            },
+          ),
+        );
+      },
     );
   }
 }

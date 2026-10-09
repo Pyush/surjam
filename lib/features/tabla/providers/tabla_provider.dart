@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../../../core/feedback/tap_feedback.dart';
 import '../models/taal_model.dart';
+import '../../../core/learn/practice_session.dart';
 import '../../../core/lifecycle/safe_change_notifier.dart';
 import '../../../core/lifecycle/playback_guard.dart';
 
@@ -96,6 +97,7 @@ class TablaProvider extends ChangeNotifier with SafeChangeNotifier {
 
   /// Triggers manual or automated Bol stroke
   void triggerBol(String bol, {bool isAutomated = false}) {
+    if (!isAutomated && _practice != null) _practice!.attempt(bol);
     _lastBolHit = bol;
     AudioEngine().playTablaBol(bol);
     if (!isAutomated) TapFeedback.strike();
@@ -129,6 +131,27 @@ class TablaProvider extends ChangeNotifier with SafeChangeNotifier {
       _isBayanHit = false;
       notifyListeners();
     });
+  }
+
+  // Taal practice: tap each bol of the theka in order.
+  PracticeSession? _practice;
+  PracticeSession? get practice => _practice;
+
+  /// Starts bol practice. The taal player stops so only the player's strokes count.
+  void startPractice(String lessonId, List<String> bols) {
+    stopTaalPlayer();
+    _practice = PracticeSession(lessonId, bols);
+    notifyListeners();
+  }
+
+  void restartPractice() {
+    _practice?.restart();
+    notifyListeners();
+  }
+
+  void stopPractice() {
+    _practice = null;
+    notifyListeners();
   }
 
   @override

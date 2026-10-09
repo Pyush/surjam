@@ -201,21 +201,29 @@ class _TablaSurfaceWidgetState extends State<TablaSurfaceWidget> with TickerProv
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.darkCardBorder),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
+      // Two rows of four, so every bol (and any practice target) is always on screen.
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        runSpacing: 6,
           children: bols.map((bol) {
             bool isLastHit = provider.lastBolHit.toLowerCase() == bol.toLowerCase();
+            final isTarget = provider.practice?.target?.toLowerCase() == bol.toLowerCase();
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4.0),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 100),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isLastHit ? AppColors.tablaAmber : AppColors.darkCardBorder,
+                    backgroundColor: isLastHit
+                        ? AppColors.tablaAmber
+                        : (isTarget ? AppColors.learnGreen.withValues(alpha: 0.3) : AppColors.darkCardBorder),
                     foregroundColor: isLastHit ? Colors.black : Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    minimumSize: const Size(72, 40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: isTarget ? const BorderSide(color: AppColors.learnGreen, width: 2.5) : BorderSide.none,
+                    ),
                     elevation: isLastHit ? 8 : 1,
                   ),
                   onPressed: () {
@@ -235,7 +243,6 @@ class _TablaSurfaceWidgetState extends State<TablaSurfaceWidget> with TickerProv
               ),
             );
           }).toList(),
-        ),
       ),
     );
   }

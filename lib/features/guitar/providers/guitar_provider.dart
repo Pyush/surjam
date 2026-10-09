@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../models/guitar_chord_model.dart';
+import '../../../core/learn/practice_session.dart';
 import '../../../core/lifecycle/safe_change_notifier.dart';
 import '../../../core/lifecycle/playback_guard.dart';
 
@@ -19,6 +20,9 @@ class GuitarProvider extends ChangeNotifier with SafeChangeNotifier {
 
   int _pluckedStringIndex = -1;
 
+  // Chord-change practice: strum each target chord in turn.
+  PracticeSession? _practice;
+
   GuitarChordModel get selectedChord => _selectedChord;
   String get chordCategory => _chordCategory;
   List<GuitarChordModel> get chordsInCategory =>
@@ -26,6 +30,7 @@ class GuitarProvider extends ChangeNotifier with SafeChangeNotifier {
   bool get isAutoStrumming => _isAutoStrumming;
   int get bpm => _bpm;
   int get pluckedStringIndex => _pluckedStringIndex;
+  PracticeSession? get practice => _practice;
 
   // Changing category only filters the palette; the current chord stays selected.
   void setChordCategory(String category) {
@@ -46,7 +51,37 @@ class GuitarProvider extends ChangeNotifier with SafeChangeNotifier {
     }
   }
 
-  void strumChord({bool isDownStrum = true}) {
+  /// Starts chord practice. Auto strum is switched off so only the player's strums count.
+  void startPractice(String lessonId, List<String> chordNames) {
+    stopAutoStrum();
+    _practice = PracticeSession(lessonId, chordNames);
+    _showTargetCategory();
+    notifyListeners();
+  }
+
+  void restartPractice() {
+    _practice?.restart();
+    _showTargetCategory();
+    notifyListeners();
+  }
+
+  void stopPractice() {
+    _practice = null;
+    notifyListeners();
+  }
+
+  // Opens the palette on the target chord's category so it is always one tap away.
+  void _showTargetCategory() {
+    final target = _practice?.target;
+    if (target == null) return;
+    _chordCategory = GuitarChordModel.preloadedChords.firstWhere((c) => c.name == target).category;
+  }
+
+  void strumChord({bool isDownStrum = true, bool isAutomated = false}) {
+    if (!isAutomated && _practice != null && !_practice!.isComplete) {
+      if (_practice!.attempt(_selectedChord.name)) _showTargetCategory();
+    }
+
     // Play notes in sequence from low string to high string (down) or vice versa (up)
     final notes = isDownStrum
         ? _selectedChord.midiNotes
@@ -111,7 +146,7 @@ class GuitarProvider extends ChangeNotifier with SafeChangeNotifier {
 
   void _strumStepOnTick() {
     bool isDown = (_strumStep % 2 == 0);
-    strumChord(isDownStrum: isDown);
+    strumChord(isDownStrum: isDown, isAutomated: true);
     _strumStep++;
   }
 

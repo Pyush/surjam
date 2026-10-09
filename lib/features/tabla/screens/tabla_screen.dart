@@ -6,15 +6,24 @@ import '../widgets/tabla_surface_widget.dart';
 import '../widgets/taal_step_sequencer_widget.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/record_button.dart';
+import '../../../shared/widgets/practice_panel.dart';
 
 /// The tabla's state lives only while this screen is open, so its taal loop stops when you leave.
 class TablaScreen extends StatelessWidget {
-  const TablaScreen({super.key});
+  /// Opens straight into bol practice when set (from the Learn hub).
+  final ({String id, List<String> bols})? practice;
+
+  const TablaScreen({super.key, this.practice});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => TablaProvider(),
+      create: (_) {
+        final provider = TablaProvider();
+        final lesson = practice;
+        if (lesson != null) provider.startPractice(lesson.id, lesson.bols);
+        return provider;
+      },
       child: const _TablaView(),
     );
   }
@@ -54,6 +63,13 @@ class _TablaView extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            if (provider.practice != null)
+              PracticePanel(
+                session: provider.practice!,
+                onRestart: provider.restartPractice,
+                onClose: provider.stopPractice,
+              ),
+
             // 1. Taal Selector Toolbar & Record Button
             _buildTaalToolbar(context, provider),
 
