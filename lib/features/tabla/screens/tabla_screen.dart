@@ -5,6 +5,7 @@ import '../models/taal_model.dart';
 import '../widgets/tabla_surface_widget.dart';
 import '../widgets/taal_step_sequencer_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 /// The tabla's state lives only while this screen is open, so its taal loop stops when you leave.
 class TablaScreen extends StatelessWidget {
@@ -108,30 +109,7 @@ class _TablaView extends StatelessWidget {
           const SizedBox(width: 8),
 
           // Record Button
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: provider.isRecording ? AppColors.recordRed : Colors.white10,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            icon: Icon(
-              provider.isRecording ? Icons.stop_circle_rounded : Icons.fiber_manual_record_rounded,
-              color: provider.isRecording ? Colors.white : Colors.redAccent,
-              size: 20,
-            ),
-            label: Text(
-              provider.isRecording ? 'STOP' : 'REC',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            onPressed: () {
-              if (provider.isRecording) {
-                _showSaveRecordingDialog(context, provider);
-              } else {
-                provider.startRecording();
-              }
-            },
-          ),
+          const RecordButton(instrument: 'Tabla'),
         ],
       ),
     );
@@ -176,30 +154,5 @@ class _TablaView extends StatelessWidget {
     );
   }
 
-  void _showSaveRecordingDialog(BuildContext context, TablaProvider provider) {
-    final textController = TextEditingController(text: 'My Tabla Rhythm');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Tabla Recording'),
-        content: TextField(
-          controller: textController,
-          decoration: const InputDecoration(labelText: 'Recording Title'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              provider.stopRecordingAndSave(textController.text.trim());
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    ).whenComplete(textController.dispose);
-  }
+
 }

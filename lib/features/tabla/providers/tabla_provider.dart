@@ -2,21 +2,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/audio/audio_engine.dart';
 import '../../../core/feedback/tap_feedback.dart';
-import '../../../core/storage/storage_service.dart';
 import '../models/taal_model.dart';
 import '../../../core/lifecycle/safe_change_notifier.dart';
 import '../../../core/lifecycle/playback_guard.dart';
-
-class TablaStrokeEvent {
-  final String bol;
-  final int timestampMs;
-  TablaStrokeEvent(this.bol, this.timestampMs);
-
-  Map<String, dynamic> toJson() => {
-    'bol': bol,
-    'timestampMs': timestampMs,
-  };
-}
 
 class TablaProvider extends ChangeNotifier with SafeChangeNotifier {
   TablaProvider() {
@@ -34,10 +22,6 @@ class TablaProvider extends ChangeNotifier with SafeChangeNotifier {
   bool _isBayanHit = false;
   String _lastBolHit = '';
 
-  // Recording State
-  bool _isRecording = false;
-  DateTime? _recordStartTime;
-  final List<TablaStrokeEvent> _recordedStrokes = [];
 
   TaalModel get selectedTaal => _selectedTaal;
   bool get isPlayingTaal => _isPlayingTaal;
@@ -48,8 +32,6 @@ class TablaProvider extends ChangeNotifier with SafeChangeNotifier {
   bool get isBayanHit => _isBayanHit;
   String get lastBolHit => _lastBolHit;
 
-  bool get isRecording => _isRecording;
-  List<TablaStrokeEvent> get recordedStrokes => List.unmodifiable(_recordedStrokes);
 
   void selectTaal(TaalModel taal) {
     _selectedTaal = taal;
@@ -129,10 +111,6 @@ class TablaProvider extends ChangeNotifier with SafeChangeNotifier {
       _animateDayan();
     }
 
-    if (!isAutomated && _isRecording && _recordStartTime != null) {
-      int elapsed = DateTime.now().difference(_recordStartTime!).inMilliseconds;
-      _recordedStrokes.add(TablaStrokeEvent(bol, elapsed));
-    }
 
     notifyListeners();
   }
@@ -153,41 +131,10 @@ class TablaProvider extends ChangeNotifier with SafeChangeNotifier {
     });
   }
 
-  void startRecording() {
-    _isRecording = true;
-    _recordStartTime = DateTime.now();
-    _recordedStrokes.clear();
-    notifyListeners();
-  }
-
-  Future<void> stopRecordingAndSave(String title) async {
-    if (!_isRecording) return;
-    _isRecording = false;
-
-    if (_recordedStrokes.isNotEmpty) {
-      final recordingData = {
-        'id': DateTime.now().millisecondsSinceEpoch.toString(),
-        'title': title,
-        'instrument': 'Tabla',
-        'createdAt': DateTime.now().toIso8601String(),
-        'durationMs': _recordedStrokes.last.timestampMs,
-        'events': _recordedStrokes.map((e) => e.toJson()).toList(),
-      };
-      await StorageService().saveRecording(recordingData);
-    }
-
-    _recordStartTime = null;
-    notifyListeners();
-  }
-
   @override
   void dispose() {
     PlaybackGuard.unregister(this);
     _taalTimer?.cancel();
-    // Closing the screen mid-recording keeps the take instead of losing it.
-    if (_isRecording) {
-      stopRecordingAndSave(StorageService.autoSavedRecordingTitle('Tabla jam'));
-    }
     super.dispose();
   }
 }

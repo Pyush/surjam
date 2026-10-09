@@ -4,6 +4,7 @@ import '../models/ukulele_model.dart';
 import '../providers/ukulele_provider.dart';
 import '../widgets/ukulele_fretboard_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class UkuleleScreen extends StatelessWidget {
   const UkuleleScreen({super.key});
@@ -21,6 +22,7 @@ class UkuleleScreen extends StatelessWidget {
               title: const Text('🪕 Ukulele Studio'),
               centerTitle: true,
               actions: [
+                RecordButton(instrument: 'Ukulele', compact: true),
                 IconButton(
                   icon: const Icon(Icons.music_note, color: AppColors.pianoGold),
                   onPressed: () => provider.strumChord(),

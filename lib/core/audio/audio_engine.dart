@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'sound_synthesizer.dart';
+import '../recording/jam_recorder.dart';
+import 'sound_event.dart';
 
 /// Plays synthesized instrument sounds.
 ///
@@ -65,89 +66,62 @@ class AudioEngine {
     _players.addAll(players);
   }
 
-  Future<void> playPianoNote(int midiNote) => _play(
-        'piano_$midiNote',
-        () => SoundSynthesizer.generatePianoWav(SoundSynthesizer.midiToFrequency(midiNote)),
-      );
-
-  Future<void> playFluteNote(int midiNote, {double vibratoAmount = 0.0}) {
-    // Vibrato changes the waveform, so it is part of the key (in 10% steps).
-    final vibratoStep = (vibratoAmount.clamp(0.0, 1.0) * 10).round();
-    return _play(
-      'flute_${midiNote}_v$vibratoStep',
-      () => SoundSynthesizer.generateFluteWav(SoundSynthesizer.midiToFrequency(midiNote), vibratoAmount: vibratoStep / 10),
-    );
+  /// Plays [sound], and adds it to the recording if one is running.
+  Future<void> play(SoundEvent sound) {
+    JamRecorder.instance.capture(sound);
+    return playWithoutRecording(sound);
   }
 
-  Future<void> playUkuleleNote(int midiNote) => _play(
-        'ukulele_$midiNote',
-        () => SoundSynthesizer.generateUkuleleWav(SoundSynthesizer.midiToFrequency(midiNote)),
-      );
-
-  Future<void> playXylophoneNote(int midiNote) => _play(
-        'xylophone_$midiNote',
-        () => SoundSynthesizer.generateXylophoneWav(SoundSynthesizer.midiToFrequency(midiNote)),
-      );
-
-  Future<void> playSitarNote(int midiNote, {int bendSemitones = 0}) {
-    final targetMidi = midiNote + bendSemitones;
-    return _play(
-      'sitar_$targetMidi',
-      () => SoundSynthesizer.generateSitarWav(SoundSynthesizer.midiToFrequency(targetMidi)),
-    );
-  }
-
-  Future<void> playGuitarNote(int midiNote) => _play(
-        'guitar_$midiNote',
-        () => SoundSynthesizer.generateGuitarWav(SoundSynthesizer.midiToFrequency(midiNote)),
-      );
-
-  Future<void> playHarmoniumNote(int midiNote) => _play(
-        'harmonium_$midiNote',
-        () => SoundSynthesizer.generateHarmoniumWav(SoundSynthesizer.midiToFrequency(midiNote)),
-      );
-
-  Future<void> playViolinNote(int midiNote) => _play(
-        'violin_$midiNote',
-        () => SoundSynthesizer.generateViolinWav(SoundSynthesizer.midiToFrequency(midiNote)),
-      );
-
-  Future<void> playDrumPad(String padType, {String kit = 'classic'}) => _play(
-        'drum_${kit}_${padType.toLowerCase()}',
-        () => SoundSynthesizer.generateDrumPadWav(padType, kit: kit),
-      );
-
-  Future<void> playTablaBol(String bol) {
-    final key = bol.toLowerCase();
-    return _play('tabla_$key', () => SoundSynthesizer.generateTablaBolWav(key));
-  }
-
-  Future<void> playDholakStroke(String stroke) {
-    final key = stroke.toLowerCase();
-    return _play('dholak_$key', () => SoundSynthesizer.generateDholakWav(key));
-  }
-
-  Future<void> playDJLoopTrack(String trackId, {double filterCutoff = 1.0, int bpm = 124, String packId = 'electro_house'}) {
-    // Loops are one bar long, so a BPM or pack change makes every generated loop obsolete.
-    final context = '${packId}_$bpm';
-    if (context != _djLoopCacheContext) {
-      _forgetSounds('dj_');
-      _djLoopCacheContext = context;
+  /// Plays [sound] without recording it: metronome clicks and replays of saved recordings.
+  Future<void> playWithoutRecording(SoundEvent sound) {
+    if (sound.isDroneStart) return _startDrone(sound);
+    if (sound.isDroneStop) return _stopDrone();
+    if (sound.type == SoundType.djLoop) {
+      // Loops are one bar long, so a BPM or pack change makes every generated loop obsolete.
+      final context = '${sound.kit}_${sound.bpm}';
+      if (context != _djLoopCacheContext) {
+        _forgetSounds('dj_');
+        _djLoopCacheContext = context;
+      }
     }
-    final double roundedCutoff = (filterCutoff * 10).round() / 10;
-    return _play(
-      'dj_${context}_${trackId.toLowerCase()}_${(roundedCutoff * 10).round()}',
-      () => SoundSynthesizer.generateDJLoopWav(trackId, filterCutoff: roundedCutoff, bpm: bpm, packId: packId),
-    );
+    return _play(sound.cacheKey, sound.generate);
   }
+
+  Future<void> playPianoNote(int midiNote) => play(SoundEvent.note(SoundType.piano, midiNote));
+
+  Future<void> playFluteNote(int midiNote, {double vibratoAmount = 0.0}) =>
+      play(SoundEvent.flute(midiNote, vibrato: vibratoAmount));
+
+  Future<void> playUkuleleNote(int midiNote) => play(SoundEvent.note(SoundType.ukulele, midiNote));
+
+  Future<void> playXylophoneNote(int midiNote) => play(SoundEvent.note(SoundType.xylophone, midiNote));
+
+  Future<void> playSitarNote(int midiNote, {int bendSemitones = 0}) =>
+      play(SoundEvent.note(SoundType.sitar, midiNote + bendSemitones));
+
+  Future<void> playGuitarNote(int midiNote) => play(SoundEvent.note(SoundType.guitar, midiNote));
+
+  Future<void> playHarmoniumNote(int midiNote) => play(SoundEvent.note(SoundType.harmonium, midiNote));
+
+  Future<void> playViolinNote(int midiNote) => play(SoundEvent.note(SoundType.violin, midiNote));
+
+  Future<void> playDrumPad(String padType, {String kit = 'classic'}) => play(SoundEvent.drum(padType, kit: kit));
+
+  Future<void> playTablaBol(String bol) => play(SoundEvent.tabla(bol));
+
+  Future<void> playDholakStroke(String stroke) => play(SoundEvent.dholak(stroke));
+
+  Future<void> playDJLoopTrack(String trackId, {double filterCutoff = 1.0, int bpm = 124, String packId = 'electro_house'}) =>
+      play(SoundEvent.djLoop(trackId, filterCutoff: filterCutoff, bpm: bpm, pack: packId));
 
   /// Starts a continuous, looping drone on [midiNote], replacing any drone already playing.
   /// It uses its own player so keyboard notes never cut it off.
-  Future<void> startDrone(int midiNote) async {
-    final path = await _soundFile(
-      'drone_$midiNote',
-      () => SoundSynthesizer.generateHarmoniumDroneWav(SoundSynthesizer.midiToFrequency(midiNote)),
-    );
+  Future<void> startDrone(int midiNote) => play(SoundEvent.droneStart(midiNote));
+
+  Future<void> stopDrone() => play(SoundEvent.droneStopEvent);
+
+  Future<void> _startDrone(SoundEvent sound) async {
+    final path = await _soundFile(sound.cacheKey, sound.generate);
     if (path == null) return;
     try {
       final player = _dronePlayer ??= AudioPlayer();
@@ -159,16 +133,15 @@ class AudioEngine {
     }
   }
 
-  Future<void> stopDrone() async {
+  Future<void> _stopDrone() async {
     try {
       await _dronePlayer?.stop();
     } catch (_) {}
   }
 
-  Future<void> playClick({bool isAccent = false}) async {
-    final key = isAccent ? 'na' : 'ke';
-    await playTablaBol(key);
-  }
+  /// Metronome tick. Never recorded, so it does not end up in jams.
+  Future<void> playClick({bool isAccent = false}) =>
+      playWithoutRecording(SoundEvent.tabla(isAccent ? 'na' : 'ke'));
 
   Future<void> _play(String key, Uint8List Function() generate) async {
     await initialize();

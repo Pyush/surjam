@@ -4,6 +4,7 @@ import '../models/sitar_raga_model.dart';
 import '../providers/sitar_provider.dart';
 import '../widgets/sitar_fretboard_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class SitarScreen extends StatelessWidget {
   const SitarScreen({super.key});
@@ -21,6 +22,7 @@ class SitarScreen extends StatelessWidget {
               title: const Text('🪕 Sitar Studio'),
               centerTitle: true,
               actions: [
+                RecordButton(instrument: 'Sitar', compact: true),
                 PopupMenuButton<SitarRagaModel>(
                   icon: const Icon(Icons.music_note, color: AppColors.pianoGold),
                   tooltip: 'Select Raag',

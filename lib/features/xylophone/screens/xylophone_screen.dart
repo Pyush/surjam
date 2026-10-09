@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/xylophone_provider.dart';
 import '../widgets/xylophone_bars_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class XylophoneScreen extends StatelessWidget {
   const XylophoneScreen({super.key});
@@ -18,6 +19,7 @@ class XylophoneScreen extends StatelessWidget {
               title: const Text('🎼 Rainbow Xylophone Studio'),
               centerTitle: true,
               actions: [
+                RecordButton(instrument: 'Xylophone', compact: true),
                 IconButton(
                   icon: Icon(
                     provider.useSargam ? Icons.translate_rounded : Icons.sort_by_alpha_rounded,

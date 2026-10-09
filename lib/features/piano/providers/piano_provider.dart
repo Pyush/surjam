@@ -5,20 +5,6 @@ import '../../../core/storage/storage_service.dart';
 import '../../../core/lifecycle/safe_change_notifier.dart';
 import '../../../core/lifecycle/playback_guard.dart';
 
-class NoteEvent {
-  final int midiNote;
-  final int timestampMs;
-  NoteEvent(this.midiNote, this.timestampMs);
-
-  Map<String, dynamic> toJson() => {
-    'midiNote': midiNote,
-    'timestampMs': timestampMs,
-  };
-
-  factory NoteEvent.fromJson(Map<String, dynamic> json) =>
-      NoteEvent(json['midiNote'], json['timestampMs']);
-}
-
 class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
   int _octave = 4; // Default starting octave (Middle C = 60)
   bool _sustain = false;
@@ -29,10 +15,6 @@ class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
   String? _selectedScale;
   String? _selectedChord;
   
-  // Recording State
-  bool _isRecording = false;
-  DateTime? _recordStartTime;
-  final List<NoteEvent> _recordedEvents = [];
 
   // Learn Mode State
   static const int pointsPerCorrectNote = 100;
@@ -67,8 +49,6 @@ class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
   String? get selectedScale => _selectedScale;
   String? get selectedChord => _selectedChord;
   
-  bool get isRecording => _isRecording;
-  List<NoteEvent> get recordedEvents => List.unmodifiable(_recordedEvents);
   
   bool get isLearnMode => _isLearnMode;
   List<int> get learnSequence => _learnSequence;
@@ -135,11 +115,6 @@ class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
     _activePressedKeys.add(midiNote);
     AudioEngine().playPianoNote(midiNote);
 
-    // Record Event
-    if (_isRecording && _recordStartTime != null) {
-      int elapsed = DateTime.now().difference(_recordStartTime!).inMilliseconds;
-      _recordedEvents.add(NoteEvent(midiNote, elapsed));
-    }
 
     // Learn Mode Step Check
     if (_isLearnMode && targetLearnMidiNote != null) {
@@ -168,34 +143,6 @@ class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
 
   void releaseAllKeys() {
     _activePressedKeys.clear();
-    notifyListeners();
-  }
-
-  // Start / Stop Recording
-  void startRecording() {
-    _isRecording = true;
-    _recordStartTime = DateTime.now();
-    _recordedEvents.clear();
-    notifyListeners();
-  }
-
-  Future<void> stopRecordingAndSave(String title) async {
-    if (!_isRecording) return;
-    _isRecording = false;
-    
-    if (_recordedEvents.isNotEmpty) {
-      final recordingData = {
-        'id': DateTime.now().millisecondsSinceEpoch.toString(),
-        'title': title,
-        'instrument': 'Piano',
-        'createdAt': DateTime.now().toIso8601String(),
-        'durationMs': _recordedEvents.last.timestampMs,
-        'events': _recordedEvents.map((e) => e.toJson()).toList(),
-      };
-      await StorageService().saveRecording(recordingData);
-    }
-    
-    _recordStartTime = null;
     notifyListeners();
   }
 
@@ -278,14 +225,9 @@ class PianoProvider extends ChangeNotifier with SafeChangeNotifier {
     notifyListeners();
   }
 
-  /// The piano screen closed: stop the demo and keep an unfinished recording rather than
-  /// losing it. (The provider itself lives for the whole app session.)
-  Future<void> onScreenClosed() async {
-    stopLearnDemo();
-    if (_isRecording) {
-      await stopRecordingAndSave(StorageService.autoSavedRecordingTitle('Piano jam'));
-    }
-  }
+  /// The piano screen closed: stop the demo. (The provider lives for the whole app session;
+  /// an unfinished recording is saved by the screen's record button.)
+  void onScreenClosed() => stopLearnDemo();
 
   void _stopDemo() {
     _demoTimer?.cancel();

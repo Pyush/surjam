@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:surjam/core/audio/metronome_service.dart';
+import 'package:surjam/core/recording/jam_recorder.dart';
 import 'package:surjam/core/storage/storage_service.dart';
 import 'package:surjam/features/dholak/models/dholak_model.dart';
 import 'package:surjam/features/dholak/providers/dholak_provider.dart';
@@ -195,29 +196,30 @@ void main() {
   });
 
   group('Unsaved recordings are kept when leaving', () {
-    testWidgets('Piano', (tester) async {
-      final navigator = await openScreen(tester, const PianoScreen());
-      final piano = providerOn<PianoProvider>(tester, PianoScreen);
-      final before = StorageService().getSavedRecordings().length;
-      piano.startRecording();
-      piano.onNoteDown(60);
-      await leave(tester, navigator);
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(piano.isRecording, isFalse);
-      expect(StorageService().getSavedRecordings().length, equals(before + 1));
-      await drain(tester);
-    });
-
-    testWidgets('Tabla', (tester) async {
-      final navigator = await openScreen(tester, const TablaScreen());
-      final tabla = providerOn<TablaProvider>(tester, TablaScreen);
-      final before = StorageService().getSavedRecordings().length;
-      tabla.startRecording();
-      tabla.triggerBol('Dha');
-      await leave(tester, navigator);
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(StorageService().getSavedRecordings().length, equals(before + 1));
-      await drain(tester);
-    });
+    // Recording is shared by every instrument: tap REC, play, then leave without stopping.
+    for (final (name, screen, play) in [
+      ('Piano', const PianoScreen() as Widget, (WidgetTester t) => providerOn<PianoProvider>(t, PianoScreen).onNoteDown(60)),
+      ('Tabla', const TablaScreen() as Widget, (WidgetTester t) => providerOn<TablaProvider>(t, TablaScreen).triggerBol('Dha')),
+      ('Xylophone', const XylophoneScreen() as Widget, (WidgetTester t) => providerOn<XylophoneProvider>(t, XylophoneScreen).playKey(64)),
+    ]) {
+      testWidgets(name, (tester) async {
+        final navigator = await openScreen(tester, screen);
+        final before = StorageService().getSavedRecordings().length;
+        // App-bar icon on most screens; a labelled REC button on piano and tabla.
+        final icon = find.byTooltip('Record');
+        await tester.tap(icon.evaluate().isNotEmpty ? icon.first : find.text('REC'));
+        await tester.pump();
+        expect(JamRecorder.instance.isRecording, isTrue);
+        play(tester);
+        await leave(tester, navigator);
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(JamRecorder.instance.isRecording, isFalse);
+        final saved = StorageService().getSavedRecordings();
+        expect(saved.length, equals(before + 1));
+        expect(saved.first['instrument'], equals(name));
+        expect(saved.first['title'], startsWith('$name jam '));
+        await drain(tester);
+      });
+    }
   });
 }

@@ -4,6 +4,7 @@ import '../models/bansuri_model.dart';
 import '../providers/bansuri_provider.dart';
 import '../widgets/bansuri_flute_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class BansuriScreen extends StatelessWidget {
   const BansuriScreen({super.key});
@@ -21,6 +22,7 @@ class BansuriScreen extends StatelessWidget {
               title: const Text('🪈 Bansuri & Flute Studio'),
               centerTitle: true,
               actions: [
+                RecordButton(instrument: 'Bansuri', compact: true),
                 PopupMenuButton<BansuriPreset>(
                   icon: const Icon(Icons.music_note, color: AppColors.pianoGold),
                   tooltip: 'Select Flute Scale',

@@ -4,6 +4,7 @@ import '../models/dj_looper_model.dart';
 import '../providers/dj_looper_provider.dart';
 import '../widgets/dj_loop_matrix_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class DJLooperScreen extends StatelessWidget {
   const DJLooperScreen({super.key});
@@ -21,6 +22,7 @@ class DJLooperScreen extends StatelessWidget {
               title: const Text('🎛 DJ Loop Launcher & FX'),
               centerTitle: true,
               actions: [
+                RecordButton(instrument: 'DJ Looper', compact: true),
                 PopupMenuButton<DJSoundPack>(
                   icon: const Icon(Icons.graphic_eq_rounded, color: AppColors.primaryCyan),
                   tooltip: 'Select Sound Pack',

@@ -4,6 +4,7 @@ import '../models/drum_pad_model.dart';
 import '../providers/drumpad_provider.dart';
 import '../widgets/pad_grid_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class DrumPadScreen extends StatelessWidget {
   const DrumPadScreen({super.key});
@@ -16,6 +17,7 @@ class DrumPadScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('🥁 Drum Pad Beat Maker'),
           centerTitle: true,
+          actions: const [RecordButton(instrument: 'Drum Pad', compact: true)],
         ),
         body: SafeArea(
           child: Column(

@@ -4,6 +4,7 @@ import '../providers/guitar_provider.dart';
 import '../models/guitar_chord_model.dart';
 import '../widgets/fretboard_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class GuitarScreen extends StatelessWidget {
   const GuitarScreen({super.key});
@@ -20,6 +21,7 @@ class GuitarScreen extends StatelessWidget {
               title: const Text('🎸 Guitar Studio'),
               centerTitle: true,
               actions: [
+                RecordButton(instrument: 'Guitar', compact: true),
                 // Auto Strum Loop Toggle
                 IconButton(
                   icon: Icon(

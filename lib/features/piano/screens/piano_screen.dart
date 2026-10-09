@@ -7,6 +7,7 @@ import '../widgets/keyboard_widget.dart';
 import '../widgets/piano_minimap_widget.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/audio/metronome_service.dart';
+import '../../../shared/widgets/record_button.dart';
 
 /// The piano's state is global (Learn and Settings use it), so whatever this screen started is
 /// stopped explicitly when it closes.
@@ -169,30 +170,7 @@ class _PianoView extends StatelessWidget {
             ),
 
             // Record Button
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: provider.isRecording ? AppColors.recordRed : Colors.white10,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: Icon(
-                provider.isRecording ? Icons.stop_circle_rounded : Icons.fiber_manual_record_rounded,
-                color: provider.isRecording ? Colors.white : Colors.redAccent,
-                size: 20,
-              ),
-              label: Text(
-                provider.isRecording ? 'STOP' : 'REC',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-              onPressed: () {
-                if (provider.isRecording) {
-                  _showSaveRecordingDialog(context, provider);
-                } else {
-                  provider.startRecording();
-                }
-              },
-            ),
+            const RecordButton(instrument: 'Piano'),
 
             // Sustain Pedal Toggle
             FilterChip(
@@ -401,30 +379,5 @@ class _PianoView extends StatelessWidget {
     );
   }
 
-  void _showSaveRecordingDialog(BuildContext context, PianoProvider provider) {
-    final textController = TextEditingController(text: 'My Piano Jam');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Recording'),
-        content: TextField(
-          controller: textController,
-          decoration: const InputDecoration(labelText: 'Recording Title'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              provider.stopRecordingAndSave(textController.text.trim());
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    ).whenComplete(textController.dispose);
-  }
+
 }

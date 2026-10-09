@@ -4,6 +4,7 @@ import '../models/dholak_model.dart';
 import '../providers/dholak_provider.dart';
 import '../widgets/dholak_surface_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class DholakScreen extends StatelessWidget {
   const DholakScreen({super.key});
@@ -21,6 +22,7 @@ class DholakScreen extends StatelessWidget {
               title: const Text('🥁 Dholak & Dhol Studio'),
               centerTitle: true,
               actions: [
+                RecordButton(instrument: 'Dholak', compact: true),
                 PopupMenuButton<DholakFolkPattern>(
                   icon: const Icon(Icons.music_note, color: AppColors.tablaAmber),
                   tooltip: 'Select Folk Rhythm Loop',

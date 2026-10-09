@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/violin_provider.dart';
 import '../widgets/fingerboard_widget.dart';
+import '../../../shared/widgets/record_button.dart';
 
 class ViolinScreen extends StatelessWidget {
   const ViolinScreen({super.key});
@@ -14,6 +15,7 @@ class ViolinScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('🎻 Violin Studio'),
           centerTitle: true,
+          actions: const [RecordButton(instrument: 'Violin', compact: true)],
         ),
         body: SafeArea(
           child: Column(

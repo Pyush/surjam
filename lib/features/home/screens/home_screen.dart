@@ -221,7 +221,7 @@ class HomeScreen extends StatelessWidget {
                   _buildDashboardCard(
                     context,
                     title: '🎙 Local Jam Recordings',
-                    subtitle: 'Replay and manage your Piano & Tabla jam sessions',
+                    subtitle: 'Replay and manage jams from every instrument',
                     gradient: const [Color(0xFF4A4E69), Color(0xFF22223B)],
                     icon: Icons.library_music_rounded,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecordingLibraryScreen())),
