@@ -13,6 +13,7 @@ class SoundType {
   static const String guitar = 'guitar';
   static const String harmonium = 'harmonium';
   static const String violin = 'violin';
+  static const String santoor = 'santoor';
   static const String drum = 'drum';
   static const String tabla = 'tabla';
   static const String dholak = 'dholak';
@@ -22,7 +23,7 @@ class SoundType {
   static const String droneStart = 'drone_start';
   static const String droneStop = 'drone_stop';
 
-  static const List<String> noteTypes = [piano, flute, ukulele, xylophone, sitar, guitar, harmonium, violin];
+  static const List<String> noteTypes = [piano, flute, ukulele, xylophone, sitar, guitar, harmonium, violin, santoor];
 
 }
 
@@ -113,6 +114,8 @@ class SoundEvent {
         return SoundSynthesizer.generateHarmoniumWav(freq());
       case SoundType.violin:
         return SoundSynthesizer.generateViolinWav(freq());
+      case SoundType.santoor:
+        return SoundSynthesizer.generateSantoorWav(freq());
       case SoundType.drum:
         return SoundSynthesizer.generateDrumPadWav(name!, kit: kit!);
       case SoundType.tabla:

@@ -206,6 +206,44 @@ class SoundSynthesizer {
     return data.buffer.asUint8List();
   }
 
+  /// Generates a santoor stroke: a hammered course of three strings tuned a few cents apart,
+  /// so the note shimmers as they beat against each other. A short hammer click starts it,
+  /// and upper partials fade faster than the fundamental, as on a real struck string.
+  static Uint8List generateSantoorWav(double frequency, {double durationSeconds = 2.2}) {
+    final int numSamples = (sampleRate * durationSeconds).toInt();
+    final ByteData data = ByteData(44 + numSamples * 2);
+    _writeWavHeader(data, numSamples, sampleRate);
+
+    final Random rng = Random(42);
+    const List<double> detuneCents = [-4.0, 0.0, 3.5];
+    const List<double> partialLevels = [1.0, 0.55, 0.3, 0.18, 0.1];
+    // Slight stretching of the overtones, as stiff metal strings have.
+    const double inharmonicity = 0.0007;
+
+    for (int i = 0; i < numSamples; i++) {
+      double t = i / sampleRate;
+      double wave = 0.0;
+      for (final cents in detuneCents) {
+        final double f = frequency * pow(2, cents / 1200);
+        for (int k = 0; k < partialLevels.length; k++) {
+          final int n = k + 1;
+          final double partialFreq = f * n * sqrt(1 + inharmonicity * n * n);
+          if (partialFreq > sampleRate / 2) break;
+          wave += partialLevels[k] * exp(-(1.4 + 1.1 * k) * t) * sin(2 * pi * partialFreq * t);
+        }
+      }
+      wave /= detuneCents.length;
+
+      // Hammer: a few milliseconds of bright noise at the strike.
+      double hammer = t < 0.004 ? (rng.nextDouble() * 2 - 1) * (1 - t / 0.004) * 0.35 : 0.0;
+      double attack = min(t / 0.002, 1.0);
+
+      double sampleValue = ((wave * attack + hammer) * 0.55).clamp(-1.0, 1.0);
+      data.setInt16(44 + i * 2, (sampleValue * 32767).toInt(), Endian.little);
+    }
+    return data.buffer.asUint8List();
+  }
+
   /// Generates Violin Bowed String PCM WAV bytes
   static Uint8List generateViolinWav(double frequency, {double durationSeconds = 1.2}) {
     final int numSamples = (sampleRate * durationSeconds).toInt();

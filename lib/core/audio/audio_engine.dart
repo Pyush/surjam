@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -107,6 +108,8 @@ class AudioEngine {
 
   Future<void> playViolinNote(int midiNote) => play(SoundEvent.note(SoundType.violin, midiNote));
 
+  Future<void> playSantoorNote(int midiNote) => play(SoundEvent.note(SoundType.santoor, midiNote));
+
   Future<void> playDrumPad(String padType, {String kit = 'classic'}) => play(SoundEvent.drum(padType, kit: kit));
 
   Future<void> playTablaBol(String bol) => play(SoundEvent.tabla(bol));
@@ -174,14 +177,38 @@ class AudioEngine {
 
   Future<String?> _writeSoundFile(String key, Uint8List Function() generate) async {
     try {
-      final directory = await (_soundDirectory ??= _prepareSoundDirectory());
-      final file = File('${directory.path}/$key.wav');
-      await file.writeAsBytes(generate(), flush: true);
-      _soundFiles[key] = file.path;
-      return file.path;
+      return await _storeSoundFile(key, generate());
     } catch (e) {
       debugPrint('AudioEngine: could not prepare $key: $e');
       return null;
+    }
+  }
+
+  Future<String> _storeSoundFile(String key, Uint8List bytes) async {
+    final directory = await (_soundDirectory ??= _prepareSoundDirectory());
+    final file = File('${directory.path}/$key.wav');
+    await file.writeAsBytes(bytes, flush: true);
+    _soundFiles[key] = file.path;
+    return file.path;
+  }
+
+  /// Generates [sounds] ahead of time on a background isolate, so the first tap on each one
+  /// starts instantly and generation never blocks the UI. Already-prepared sounds are skipped.
+  Future<void> preload(Iterable<SoundEvent> sounds) async {
+    final missing = {
+      for (final sound in sounds)
+        if (!sound.isDroneStop && !_soundFiles.containsKey(sound.cacheKey)) sound.cacheKey: sound,
+    }.values.toList();
+    if (missing.isEmpty) return;
+    try {
+      final generated = await Isolate.run(() => [for (final sound in missing) sound.generate()]);
+      for (int i = 0; i < missing.length; i++) {
+        if (!_soundFiles.containsKey(missing[i].cacheKey)) {
+          await _storeSoundFile(missing[i].cacheKey, generated[i]);
+        }
+      }
+    } catch (e) {
+      debugPrint('AudioEngine: preload failed: $e');
     }
   }
 

@@ -30,6 +30,7 @@ class _RecordingLibraryScreenState extends State<RecordingLibraryScreen> {
     'Harmonium': '🎹',
     'Xylophone': '🎼',
     'DJ Looper': '🎛',
+    'Santoor': '🎶',
   };
 
   List<Recording> _recordings = [];
