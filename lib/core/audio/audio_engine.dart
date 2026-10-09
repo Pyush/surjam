@@ -28,7 +28,11 @@ class AudioEngine {
   Future<Directory>? _soundDirectory;
 
   String? _djLoopCacheContext;
-  AudioPlayer? _dronePlayer;
+  // Held sounds (drone, shehnai): two players per channel so a new note can start while the
+  // previous one fades out.
+  final Map<String, List<AudioPlayer>> _holdPlayers = {};
+  final Map<String, int> _holdActive = {};
+  final Map<AudioPlayer, int> _holdGeneration = {};
 
   Future<void>? _initialization;
 
@@ -77,8 +81,8 @@ class AudioEngine {
 
   /// Plays [sound] without recording it: metronome clicks and replays of saved recordings.
   Future<void> playWithoutRecording(SoundEvent sound) {
-    if (sound.isDroneStart) return _startDrone(sound);
-    if (sound.isDroneStop) return _stopDrone();
+    if (sound.isHoldStart) return _startHold(sound);
+    if (sound.isHoldStop) return _stopHold(sound.holdChannel!);
     if (sound.type == SoundType.djLoop) {
       // Loops are one bar long, so a BPM or pack change makes every generated loop obsolete.
       final context = '${sound.kit}_${sound.bpm}';
@@ -110,6 +114,8 @@ class AudioEngine {
 
   Future<void> playSantoorNote(int midiNote) => play(SoundEvent.note(SoundType.santoor, midiNote));
 
+  Future<void> playVeenaNote(int midiNote) => play(SoundEvent.note(SoundType.veena, midiNote));
+
   Future<void> playDrumPad(String padType, {String kit = 'classic'}) => play(SoundEvent.drum(padType, kit: kit));
 
   Future<void> playTablaBol(String bol) => play(SoundEvent.tabla(bol));
@@ -125,22 +131,60 @@ class AudioEngine {
 
   Future<void> stopDrone() => play(SoundEvent.droneStopEvent);
 
-  Future<void> _startDrone(SoundEvent sound) async {
-    final path = await _soundFile(sound.cacheKey, sound.generate);
-    if (path == null) return;
-    try {
-      final player = _dronePlayer ??= AudioPlayer();
-      await player.stop();
-      await player.setReleaseMode(ReleaseMode.loop);
-      await player.play(DeviceFileSource(path));
-    } catch (e) {
-      debugPrint('AudioEngine: drone failed: $e');
+  /// Starts holding a shehnai note until [stopShehnai] or the next note, which glides in.
+  Future<void> startShehnai(int midiNote, {bool vibrato = true}) =>
+      play(SoundEvent.shehnaiStart(midiNote, vibrato: vibrato));
+
+  Future<void> stopShehnai() => play(SoundEvent.shehnaiStopEvent);
+
+  /// Stops every held sound: used when replaying a recording ends.
+  Future<void> stopAllHolds() async {
+    for (final channel in List.of(_holdPlayers.keys)) {
+      await _stopHold(channel);
     }
   }
 
-  Future<void> _stopDrone() async {
+  Future<void> _startHold(SoundEvent sound) async {
+    final path = await _soundFile(sound.cacheKey, sound.generate);
+    if (path == null) return;
+    final channel = sound.holdChannel!;
+    final players = _holdPlayers.putIfAbsent(channel, () => [AudioPlayer(), AudioPlayer()]);
+    final previous = _holdActive[channel];
+    final next = previous == null ? 0 : 1 - previous;
+    _holdActive[channel] = next;
+    final player = players[next];
+    final generation = (_holdGeneration[player] ?? 0) + 1;
+    _holdGeneration[player] = generation;
     try {
-      await _dronePlayer?.stop();
+      await player.stop();
+      await player.setVolume(1);
+      await player.setReleaseMode(ReleaseMode.loop);
+      await player.play(DeviceFileSource(path));
+    } catch (e) {
+      debugPrint('AudioEngine: held sound failed: $e');
+    }
+    if (previous != null) _fadeOut(players[previous]);
+  }
+
+  Future<void> _stopHold(String channel) async {
+    final active = _holdActive.remove(channel);
+    final players = _holdPlayers[channel];
+    if (active == null || players == null) return;
+    await _fadeOut(players[active]);
+  }
+
+  /// A quick fade instead of an abrupt stop, which would click. Gives up if the player is
+  /// reused for a new note mid-fade.
+  Future<void> _fadeOut(AudioPlayer player) async {
+    final generation = _holdGeneration[player];
+    try {
+      for (final volume in const [0.55, 0.25]) {
+        await player.setVolume(volume);
+        await Future<void>.delayed(const Duration(milliseconds: 25));
+        if (_holdGeneration[player] != generation) return;
+      }
+      await player.stop();
+      await player.setVolume(1);
     } catch (_) {}
   }
 
@@ -197,7 +241,7 @@ class AudioEngine {
   Future<void> preload(Iterable<SoundEvent> sounds) async {
     final missing = {
       for (final sound in sounds)
-        if (!sound.isDroneStop && !_soundFiles.containsKey(sound.cacheKey)) sound.cacheKey: sound,
+        if (!sound.isHoldStop && !_soundFiles.containsKey(sound.cacheKey)) sound.cacheKey: sound,
     }.values.toList();
     if (missing.isEmpty) return;
     try {
@@ -235,8 +279,13 @@ class AudioEngine {
       player.dispose();
     }
     _players.clear();
-    _dronePlayer?.dispose();
-    _dronePlayer = null;
+    for (final players in _holdPlayers.values) {
+      for (final player in players) {
+        player.dispose();
+      }
+    }
+    _holdPlayers.clear();
+    _holdActive.clear();
     _initialization = null;
   }
 }

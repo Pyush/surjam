@@ -1,5 +1,5 @@
 /// One of the ten thaats (parent scales) of Hindustani music, after Bhatkhande.
-/// The santoor is tuned to a thaat, so its strings give exactly that scale.
+/// The santoor and shehnai are tuned to a thaat, so they play exactly that scale.
 class Thaat {
   final String id;
   final String name;
@@ -24,14 +24,15 @@ class Thaat {
   ];
 }
 
-/// The santoor's strings for a thaat: two octaves from Sa (C4) up to Sa'' (C6), lowest first.
-class SantoorTuning {
+/// The notes of a thaat over two octaves, Sa (C4) up to Sa'' (C6), lowest first, with
+/// sargam and note-name labels.
+class ThaatTuning {
   static const int sa = 60;
 
   static const List<String> _sargam = ['Sa', 're', 'Re', 'ga', 'Ga', 'Ma', 'MA', 'Pa', 'dha', 'Dha', 'ni', 'Ni'];
   static const List<String> _english = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-  static List<int> strings(Thaat thaat) => [
+  static List<int> notes(Thaat thaat) => [
         for (final octave in [0, 12]) for (final interval in thaat.intervals) sa + octave + interval,
         sa + 24,
       ];

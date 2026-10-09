@@ -4,7 +4,7 @@ import '../../../core/audio/audio_engine.dart';
 import '../../../core/audio/sound_event.dart';
 import '../../../core/lifecycle/playback_guard.dart';
 import '../../../core/lifecycle/safe_change_notifier.dart';
-import '../models/santoor_model.dart';
+import '../../../core/music/thaat.dart';
 
 class SantoorProvider extends ChangeNotifier with SafeChangeNotifier {
   /// Time between strikes in a tremolo roll (about 11 strikes a second).
@@ -22,7 +22,7 @@ class SantoorProvider extends ChangeNotifier with SafeChangeNotifier {
   Timer? _tremoloTimer;
 
   Thaat get thaat => _thaat;
-  List<int> get strings => SantoorTuning.strings(_thaat);
+  List<int> get strings => ThaatTuning.notes(_thaat);
   bool get showSargam => _showSargam;
   int? get tremoloMidi => _tremoloMidi;
   bool isRinging(int midi) => _ringing.contains(midi) || _tremoloMidi == midi;

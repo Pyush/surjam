@@ -244,6 +244,116 @@ class SoundSynthesizer {
     return data.buffer.asUint8List();
   }
 
+  /// Generates one seamless loop of a sustained shehnai tone, played on repeat while a key is
+  /// held. The loop holds a whole number of waveform cycles and, with [vibrato], a whole number
+  /// of vibrato cycles, so it repeats without a seam.
+  ///
+  /// The double reed is modelled as many harmonics shaped by a nasal resonance around 1.4 kHz,
+  /// with a little breath noise.
+  static Uint8List generateShehnaiLoopWav(double targetFrequency, {bool vibrato = true}) {
+    const double targetSeconds = 1.2;
+    final int cycles = (targetSeconds * targetFrequency).round();
+    final int numSamples = (sampleRate * cycles / targetFrequency).round();
+    final double duration = numSamples / sampleRate;
+    // Retuned by a fraction of a cent so the cycles fit the whole-sample length exactly.
+    final double frequency = cycles / duration;
+
+    // About 5.5 vibrato wobbles a second, rounded to fit the loop; depth about 15 cents.
+    final double vibratoRate = (5.5 * duration).round() / duration;
+    final double vibratoDepth = vibrato ? 0.009 : 0.0;
+    final double modulationIndex = vibratoDepth * frequency / vibratoRate;
+
+    final int harmonics = min(18, (sampleRate / 2 / (frequency * 1.02)).floor());
+    final List<double> levels = [
+      for (int n = 1; n <= harmonics; n++)
+        pow(n, -0.55) * (0.35 + 1.2 * exp(-pow((n * frequency - 1400) / 750, 2))),
+    ];
+
+    final Random rng = Random(7);
+    final Float64List samples = Float64List(numSamples);
+    double peak = 0;
+    double breath = 0;
+    for (int i = 0; i < numSamples; i++) {
+      final double t = i / sampleRate;
+      final double phase = 2 * pi * frequency * t + modulationIndex * sin(2 * pi * vibratoRate * t);
+      double wave = 0;
+      for (int n = 1; n <= harmonics; n++) {
+        wave += levels[n - 1] * sin(n * phase);
+      }
+      // Softly filtered breath noise, a little louder at the top of each vibrato wobble.
+      breath = 0.9 * breath + 0.1 * (rng.nextDouble() * 2 - 1);
+      wave += breath * 0.6 * (1 + 0.3 * sin(2 * pi * vibratoRate * t));
+      samples[i] = wave;
+      if (wave.abs() > peak) peak = wave.abs();
+    }
+
+    final ByteData data = ByteData(44 + numSamples * 2);
+    _writeWavHeader(data, numSamples, sampleRate);
+    final double gain = peak == 0 ? 0 : 0.7 / peak;
+    for (int i = 0; i < numSamples; i++) {
+      data.setInt16(44 + i * 2, (samples[i] * gain * 32767).round(), Endian.little);
+    }
+    return data.buffer.asUint8List();
+  }
+
+  /// Generates a plucked veena string with the Karplus-Strong string model: a burst of noise
+  /// circulates in a delay line one period long, losing its high frequencies on each pass, the
+  /// way a real string's tone mellows as it rings. A fractional all-pass delay keeps every note
+  /// in tune, and a light soft-clip adds the jivari bridge's buzz.
+  static Uint8List generateVeenaWav(double frequency, {double durationSeconds = 3.0}) {
+    final int numSamples = (sampleRate * durationSeconds).toInt();
+
+    // Loop delay = string period; the two-point average in the loop adds half a sample.
+    final double loopDelay = sampleRate / frequency - 0.5;
+    int length = loopDelay.floor();
+    double fraction = loopDelay - length;
+    if (fraction < 0.1) {
+      // Keep the all-pass in its accurate range.
+      length -= 1;
+      fraction += 1;
+    }
+    final double allpass = (1 - fraction) / (1 + fraction);
+    // Per-pass gain for a long, veena-like ring (about 7 s to fade by 60 dB) at any pitch.
+    final double gain = pow(0.001, 1 / (frequency * 7.0)).toDouble();
+
+    // Pluck: noise, softened a little so the attack is a finger, not a pick.
+    final Random rng = Random(11);
+    final Float64List line = Float64List(length);
+    double smooth = 0;
+    for (int i = 0; i < length; i++) {
+      smooth = 0.6 * smooth + 0.4 * (rng.nextDouble() * 2 - 1);
+      line[i] = smooth;
+    }
+
+    final Float64List out = Float64List(numSamples);
+    int index = 0;
+    double previous = 0, apIn = 0, apOut = 0, peak = 0;
+    for (int i = 0; i < numSamples; i++) {
+      final double current = line[index];
+      final double averaged = 0.5 * (current + previous);
+      previous = current;
+      final double tuned = allpass * (averaged - apOut) + apIn;
+      apIn = averaged;
+      apOut = tuned;
+      line[index] = tuned * gain;
+      index = (index + 1) % length;
+
+      // Jivari: gentle soft clipping brightens the tone like the curved veena bridge.
+      final double buzzed = current + 0.18 * current * current.abs();
+      final double attack = min(i / 40.0, 1.0);
+      out[i] = buzzed * attack;
+      if (out[i].abs() > peak) peak = out[i].abs();
+    }
+
+    final ByteData data = ByteData(44 + numSamples * 2);
+    _writeWavHeader(data, numSamples, sampleRate);
+    final double scale = peak == 0 ? 0 : 0.8 / peak;
+    for (int i = 0; i < numSamples; i++) {
+      data.setInt16(44 + i * 2, (out[i] * scale * 32767).round(), Endian.little);
+    }
+    return data.buffer.asUint8List();
+  }
+
   /// Generates Violin Bowed String PCM WAV bytes
   static Uint8List generateViolinWav(double frequency, {double durationSeconds = 1.2}) {
     final int numSamples = (sampleRate * durationSeconds).toInt();

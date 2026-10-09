@@ -14,6 +14,7 @@ class SoundType {
   static const String harmonium = 'harmonium';
   static const String violin = 'violin';
   static const String santoor = 'santoor';
+  static const String veena = 'veena';
   static const String drum = 'drum';
   static const String tabla = 'tabla';
   static const String dholak = 'dholak';
@@ -23,7 +24,11 @@ class SoundType {
   static const String droneStart = 'drone_start';
   static const String droneStop = 'drone_stop';
 
-  static const List<String> noteTypes = [piano, flute, ukulele, xylophone, sitar, guitar, harmonium, violin, santoor];
+  /// A held shehnai note; it sounds until the next shehnai start or [shehnaiStop].
+  static const String shehnaiStart = 'shehnai_start';
+  static const String shehnaiStop = 'shehnai_stop';
+
+  static const List<String> noteTypes = [piano, flute, ukulele, xylophone, sitar, guitar, harmonium, violin, santoor, veena];
 
 }
 
@@ -70,8 +75,24 @@ class SoundEvent {
 
   static const SoundEvent droneStopEvent = SoundEvent._(SoundType.droneStop);
 
+  factory SoundEvent.shehnaiStart(int midi, {bool vibrato = true}) =>
+      SoundEvent._(SoundType.shehnaiStart, midi: midi, amount: vibrato ? 1 : 0);
+
+  static const SoundEvent shehnaiStopEvent = SoundEvent._(SoundType.shehnaiStop);
+
   bool get isDroneStart => type == SoundType.droneStart;
   bool get isDroneStop => type == SoundType.droneStop;
+
+  /// Held sounds loop until stopped. Each has its own channel, so a drone and a shehnai note
+  /// can sound together; a new start on a channel replaces what was holding there.
+  String? get holdChannel => switch (type) {
+        SoundType.droneStart || SoundType.droneStop => 'drone',
+        SoundType.shehnaiStart || SoundType.shehnaiStop => 'shehnai',
+        _ => null,
+      };
+
+  bool get isHoldStart => type == SoundType.droneStart || type == SoundType.shehnaiStart;
+  bool get isHoldStop => type == SoundType.droneStop || type == SoundType.shehnaiStop;
 
   /// Identifies the generated audio, so identical sounds share one generated file.
   String get cacheKey {
@@ -89,6 +110,10 @@ class SoundEvent {
         return 'drone_$midi';
       case SoundType.droneStop:
         return 'drone_stop';
+      case SoundType.shehnaiStart:
+        return 'shehnai_${midi}_v${amount!.round()}';
+      case SoundType.shehnaiStop:
+        return 'shehnai_stop';
       default:
         return '${type}_$midi';
     }
@@ -116,6 +141,8 @@ class SoundEvent {
         return SoundSynthesizer.generateViolinWav(freq());
       case SoundType.santoor:
         return SoundSynthesizer.generateSantoorWav(freq());
+      case SoundType.veena:
+        return SoundSynthesizer.generateVeenaWav(freq());
       case SoundType.drum:
         return SoundSynthesizer.generateDrumPadWav(name!, kit: kit!);
       case SoundType.tabla:
@@ -126,6 +153,8 @@ class SoundEvent {
         return SoundSynthesizer.generateDJLoopWav(name!, filterCutoff: amount!, bpm: bpm!, packId: kit!);
       case SoundType.droneStart:
         return SoundSynthesizer.generateHarmoniumDroneWav(freq());
+      case SoundType.shehnaiStart:
+        return SoundSynthesizer.generateShehnaiLoopWav(freq(), vibrato: amount == 1);
       default:
         throw StateError('$type has no audio');
     }

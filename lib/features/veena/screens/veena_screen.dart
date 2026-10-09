@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/veena_provider.dart';
+import '../widgets/veena_fretboard_widget.dart';
 import '../../../core/music/thaat.dart';
-import '../providers/santoor_provider.dart';
-import '../widgets/santoor_strings_widget.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/record_button.dart';
 
-class SantoorScreen extends StatelessWidget {
-  const SantoorScreen({super.key});
+class VeenaScreen extends StatelessWidget {
+  const VeenaScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => SantoorProvider(),
-      child: Consumer<SantoorProvider>(
+      create: (_) => VeenaProvider(),
+      child: Consumer<VeenaProvider>(
         builder: (context, provider, _) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('🎶 Santoor Studio'),
+              title: const Text('🪕 Veena Studio'),
               centerTitle: true,
               actions: [
-                const RecordButton(instrument: 'Santoor', compact: true),
+                const RecordButton(instrument: 'Veena', compact: true),
                 IconButton(
                   tooltip: provider.showSargam ? 'Show note names' : 'Show sargam',
                   icon: Text(
@@ -34,7 +34,6 @@ class SantoorScreen extends StatelessWidget {
             body: SafeArea(
               child: Column(
                 children: [
-                  // Thaat (tuning) selector
                   SizedBox(
                     height: 44,
                     child: ListView(
@@ -60,19 +59,32 @@ class SantoorScreen extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
-                    child: Text(
-                      '${provider.thaat.name} thaat: ${provider.thaat.character}.  Tap to strike · hold for a tremolo roll',
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Tap a fret to pluck · drag across it for gamaka',
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: provider.talaRinging ? AppColors.pianoGold : AppColors.darkCard,
+                            foregroundColor: provider.talaRinging ? Colors.black : Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          onPressed: provider.strumTala,
+                          icon: const Icon(Icons.waves_rounded, size: 18),
+                          label: const Text('Tala strings', style: TextStyle(fontSize: 13)),
+                        ),
+                      ],
                     ),
                   ),
                   const Expanded(
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
-                      child: SantoorStringsWidget(),
+                      child: VeenaFretboardWidget(),
                     ),
                   ),
                 ],

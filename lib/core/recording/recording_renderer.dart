@@ -55,8 +55,8 @@ class RecordingRenderer {
     }
   }
 
-  /// Every sound in the recording, placed on the timeline. A held drone becomes one voice
-  /// that loops until the next drone change or the end of the recording.
+  /// Every sound in the recording, placed on the timeline. A held sound (drone, shehnai note)
+  /// becomes one voice that loops until the next change on its channel or the end.
   static List<_Voice> _voices(Recording recording) {
     final samplesByKey = <String, Float32List>{};
     Float32List samplesOf(SoundEvent sound) => samplesByKey.putIfAbsent(sound.cacheKey, () => _decodeWav(sound.generate()));
@@ -68,11 +68,12 @@ class RecordingRenderer {
       final event = events[i];
       final start = _msToSamples(event.timeMs);
       final sound = event.sound;
-      if (sound.isDroneStop) continue;
-      if (sound.isDroneStart) {
+      if (sound.isHoldStop) continue;
+      if (sound.isHoldStart) {
+        // Held until the next start or stop on the same channel, or the end of the recording.
         var end = recordingEnd;
         for (int j = i + 1; j < events.length; j++) {
-          if (events[j].sound.isDroneStart || events[j].sound.isDroneStop) {
+          if (events[j].sound.holdChannel == sound.holdChannel) {
             end = _msToSamples(events[j].timeMs);
             break;
           }

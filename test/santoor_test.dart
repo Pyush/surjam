@@ -11,7 +11,7 @@ import 'package:surjam/core/audio/sound_synthesizer.dart';
 import 'package:surjam/core/lifecycle/playback_guard.dart';
 import 'package:surjam/core/recording/jam_recorder.dart';
 import 'package:surjam/core/storage/storage_service.dart';
-import 'package:surjam/features/santoor/models/santoor_model.dart';
+import 'package:surjam/core/music/thaat.dart';
 import 'package:surjam/features/santoor/providers/santoor_provider.dart';
 import 'package:surjam/features/santoor/screens/santoor_screen.dart';
 
@@ -47,7 +47,7 @@ void main() {
 
     test('Strings run two octaves from Sa to Sa\'\' in the thaat', () {
       for (final thaat in Thaat.all) {
-        final strings = SantoorTuning.strings(thaat);
+        final strings = ThaatTuning.notes(thaat);
         expect(strings.length, equals(15), reason: thaat.id);
         expect(strings.first, equals(60));
         expect(strings.last, equals(84));
@@ -59,13 +59,13 @@ void main() {
     });
 
     test('Labels show octave marks and komal/tivra forms', () {
-      expect(SantoorTuning.sargamLabel(60), equals('Sa'));
-      expect(SantoorTuning.sargamLabel(72), equals("Sa'"));
-      expect(SantoorTuning.sargamLabel(84), equals("Sa''"));
-      expect(SantoorTuning.sargamLabel(66), equals('MA')); // tivra Ma
-      expect(SantoorTuning.sargamLabel(61), equals('re')); // komal Re
-      expect(SantoorTuning.englishLabel(60), equals('C4'));
-      expect(SantoorTuning.englishLabel(78), equals('F#5'));
+      expect(ThaatTuning.sargamLabel(60), equals('Sa'));
+      expect(ThaatTuning.sargamLabel(72), equals("Sa'"));
+      expect(ThaatTuning.sargamLabel(84), equals("Sa''"));
+      expect(ThaatTuning.sargamLabel(66), equals('MA')); // tivra Ma
+      expect(ThaatTuning.sargamLabel(61), equals('re')); // komal Re
+      expect(ThaatTuning.englishLabel(60), equals('C4'));
+      expect(ThaatTuning.englishLabel(78), equals('F#5'));
     });
   });
 
@@ -94,7 +94,7 @@ void main() {
     });
 
     test('Preloading writes the sounds in the background', () async {
-      final tuning = SantoorTuning.strings(Thaat.all.first);
+      final tuning = ThaatTuning.notes(Thaat.all.first);
       await AudioEngine().preload(tuning.map((m) => SoundEvent.note(SoundType.santoor, m)));
       final dir = Directory('${(await AudioEngine.baseDirectoryProvider()).path}/surjam_sounds');
       for (final midi in tuning) {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/santoor_model.dart';
+import '../../../core/music/thaat.dart';
 import '../providers/santoor_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -83,11 +83,11 @@ class _SantoorString extends StatelessWidget {
   Widget build(BuildContext context) {
     final ringing = provider.isRinging(midi);
     final isSa = midi % 12 == 0;
-    final label = provider.showSargam ? SantoorTuning.sargamLabel(midi) : SantoorTuning.englishLabel(midi);
+    final label = provider.showSargam ? ThaatTuning.sargamLabel(midi) : ThaatTuning.englishLabel(midi);
 
     return Semantics(
       button: true,
-      label: '${SantoorTuning.sargamLabel(midi)} string, ${SantoorTuning.englishLabel(midi)}',
+      label: '${ThaatTuning.sargamLabel(midi)} string, ${ThaatTuning.englishLabel(midi)}',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: (_) => provider.strike(midi),

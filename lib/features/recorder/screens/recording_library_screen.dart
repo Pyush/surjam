@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/audio/audio_engine.dart';
-import '../../../core/audio/sound_event.dart';
 import '../../../core/recording/recording.dart';
 import '../../../core/recording/recording_sharer.dart';
 import '../../../core/theme/app_colors.dart';
@@ -31,6 +30,8 @@ class _RecordingLibraryScreenState extends State<RecordingLibraryScreen> {
     'Xylophone': '🎼',
     'DJ Looper': '🎛',
     'Santoor': '🎶',
+    'Shehnai': '🎺',
+    'Veena': '🪕',
   };
 
   List<Recording> _recordings = [];
@@ -81,7 +82,7 @@ class _RecordingLibraryScreenState extends State<RecordingLibraryScreen> {
     final wasPlaying = _playbackTimer != null;
     _playbackTimer?.cancel();
     _playbackTimer = null;
-    if (wasPlaying) AudioEngine().playWithoutRecording(SoundEvent.droneStopEvent);
+    if (wasPlaying) AudioEngine().stopAllHolds();
     if (mounted) {
       setState(() => _currentlyPlayingId = null);
     }

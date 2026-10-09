@@ -19,6 +19,8 @@ import '../../learn/screens/exercise_list_screen.dart';
 import '../../recorder/screens/recording_library_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../santoor/screens/santoor_screen.dart';
+import '../../shehnai/screens/shehnai_screen.dart';
+import '../../veena/screens/veena_screen.dart';
 import '../../progress/screens/progress_screen.dart';
 import '../../../core/progress/practice_tracker.dart';
 import '../../../core/theme/app_colors.dart';
@@ -180,6 +182,28 @@ class HomeScreen extends StatelessWidget {
                     gradient: const [Color(0xFFB5651D), Color(0xFF6B3D1E)],
                     icon: Icons.blur_linear_rounded,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SantoorScreen())),
+                  ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
+
+                  const SizedBox(height: 12),
+
+                  _buildDashboardCard(
+                    context,
+                    title: '🎺 Shehnai Studio',
+                    subtitle: 'Hold to play, slide for meend, with gamak and sur drone',
+                    gradient: const [Color(0xFFC0392B), Color(0xFF7B241C)],
+                    icon: Icons.air_rounded,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShehnaiScreen())),
+                  ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
+
+                  const SizedBox(height: 12),
+
+                  _buildDashboardCard(
+                    context,
+                    title: '🪕 Veena Studio',
+                    subtitle: 'Plucked frets with gamaka pulls and tala strings',
+                    gradient: const [Color(0xFF8E6E2E), Color(0xFF4A2C16)],
+                    icon: Icons.linear_scale_rounded,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VeenaScreen())),
                   ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
