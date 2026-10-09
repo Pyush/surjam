@@ -10,6 +10,8 @@ String _visibleText(String html) {
       .replaceAll(RegExp(r'<!--.*?-->', dotAll: true), ' ')
       .replaceAll(RegExp(r'</?a\b[^>]*>'), '') // links are inline: no extra space
       .replaceAll(RegExp(r'<[^>]+>'), ' ')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&lt;', '<')
       .replaceAll('&amp;', '&')
       .replaceAll(RegExp(r'\s+'), ' ');
 }

@@ -24,12 +24,11 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
-  // Only local settings are needed before the first frame. Audio players and the ads SDK
-  // (which can wait on the network for seconds) start in the background.
+  // Only local settings are needed before the first frame. Audio players start in the
+  // background; ads start after the first frame (see _SurJamAppState).
   await StorageService().initialize();
   await PracticeTracker.instance.initialize();
   unawaited(AudioEngine().initialize());
-  unawaited(AdMobService().initialize());
 
   runApp(const SurJamApp());
 }
@@ -51,6 +50,8 @@ class _SurJamAppState extends State<SurJamApp> {
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(onHide: PlaybackGuard.stopAll);
+    // Ad consent may show Google's form over the app, so it waits for the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) => AdMobService().initialize());
   }
 
   @override

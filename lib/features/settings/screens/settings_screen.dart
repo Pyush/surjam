@@ -4,6 +4,7 @@ import 'privacy_policy_screen.dart';
 import '../../piano/providers/piano_provider.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/progress/practice_tracker.dart';
+import '../../../core/ads/admob_service.dart';
 import '../../../core/theme/app_colors.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -93,6 +94,22 @@ class SettingsScreen extends StatelessWidget {
 
             const Divider(color: AppColors.darkCardBorder),
             _sectionHeader('About'),
+            // Required where ad consent applies (EEA, UK, Switzerland); hidden elsewhere.
+            ValueListenableBuilder<bool>(
+              valueListenable: AdMobService().privacyOptionsRequired,
+              builder: (context, required, _) => required
+                  ? ListTile(
+                      leading: const Icon(Icons.shield_outlined, color: AppColors.primaryCyan),
+                      title: const Text('Privacy choices', style: TextStyle(color: Colors.white)),
+                      subtitle: const Text(
+                        'Change your consent for ads',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white54),
+                      onTap: () => AdMobService().showPrivacyOptions(),
+                    )
+                  : const SizedBox.shrink(),
+            ),
             ListTile(
               leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primaryCyan),
               title: const Text('Privacy Policy', style: TextStyle(color: Colors.white)),

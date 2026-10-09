@@ -1,12 +1,34 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'ad_consent.dart';
 
 class AdMobService {
   static final AdMobService _instance = AdMobService._internal();
   factory AdMobService() => _instance;
   AdMobService._internal();
 
+  /// Consent gate and ads SDK start-up; replaced in tests.
+  @visibleForTesting
+  static AdConsent consent = AdConsent();
+  @visibleForTesting
+  static Future<void> Function() startAdsSdk = () => MobileAds.instance.initialize();
+
+  /// True once consent allows ads and the SDK has started. Banners wait for this.
+  final ValueNotifier<bool> adsReady = ValueNotifier(false);
+
+  /// True when Settings must offer "Privacy choices" (consent regions only).
+  final ValueNotifier<bool> privacyOptionsRequired = ValueNotifier(false);
+
+  Future<void>? _initialization;
   bool _isInitialized = false;
+
+  @visibleForTesting
+  void resetForTest() {
+    _initialization = null;
+    _isInitialized = false;
+    adsReady.value = false;
+    privacyOptionsRequired.value = false;
+  }
   InterstitialAd? _interstitialAd;
   RewardedAd? _rewardedAd;
 
@@ -41,14 +63,58 @@ class AdMobService {
     }
   }
 
-  Future<void> initialize() async {
-    if (_isInitialized) return;
+  /// Gathers consent where required, then starts ads. Called once the first frame is up,
+  /// because the consent form is shown over the app.
+  Future<void> initialize() => _initialization ??= _initialize();
+
+  Future<void> _initialize() async {
+    // Consent given in an earlier session lets ads start without waiting for the update.
+    if (await _safely(consent.canRequestAds)) await _startAds();
+
+    final bool allowed;
     try {
-      await MobileAds.instance.initialize();
+      allowed = await consent.gather();
+    } catch (e) {
+      // Offline or the service is unavailable: keep whatever the last session decided.
+      debugPrint('AdMob: consent update failed, using the previous choice: $e');
+      privacyOptionsRequired.value = await _safely(consent.privacyOptionsRequired);
+      return;
+    }
+    privacyOptionsRequired.value = await _safely(consent.privacyOptionsRequired);
+    if (allowed) await _startAds();
+  }
+
+  /// Lets the user change their consent from Settings, then applies the new choice.
+  Future<void> showPrivacyOptions() async {
+    await consent.showPrivacyOptions();
+    if (await _safely(consent.canRequestAds)) {
+      await _startAds();
+    } else {
+      adsReady.value = false;
+    }
+  }
+
+  Future<void> _startAds() async {
+    if (_isInitialized) {
+      adsReady.value = true;
+      return;
+    }
+    try {
+      await startAdsSdk();
       _isInitialized = true;
-      preloadInterstitial();
+      adsReady.value = true;
+      // Interstitials are not shown anywhere yet; preloading one would only waste requests
+      // and lower the show rate AdMob reports. Call preloadInterstitial() when they are used.
     } catch (e) {
       debugPrint('AdMob initialization handled: $e');
+    }
+  }
+
+  static Future<bool> _safely(Future<bool> Function() check) async {
+    try {
+      return await check();
+    } catch (_) {
+      return false;
     }
   }
 

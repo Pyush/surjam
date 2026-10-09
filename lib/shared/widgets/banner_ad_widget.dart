@@ -14,10 +14,25 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
 
+  final ValueNotifier<bool> _adsReady = AdMobService().adsReady;
+
   @override
   void initState() {
     super.initState();
-    _loadBannerAd();
+    // No ad is requested until consent allows it (and the SDK has started).
+    _adsReady.addListener(_onAdsReadyChanged);
+    if (_adsReady.value) _loadBannerAd();
+  }
+
+  void _onAdsReadyChanged() {
+    if (_adsReady.value) {
+      if (_bannerAd == null) _loadBannerAd();
+    } else {
+      // Consent withdrawn: remove the banner.
+      _bannerAd?.dispose();
+      _bannerAd = null;
+      if (mounted) setState(() => _isAdLoaded = false);
+    }
   }
 
   void _loadBannerAd() {
@@ -52,6 +67,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   void dispose() {
+    _adsReady.removeListener(_onAdsReadyChanged);
     _bannerAd?.dispose();
     super.dispose();
   }

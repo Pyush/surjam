@@ -31,7 +31,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
       'SurJam shows ads provided by Google AdMob. To show and measure ads, Google may collect '
           'information such as your device\'s advertising ID, IP address and app usage. Google\'s use of '
           'this information is described at https://policies.google.com/technologies/ads. You can reset '
-          'or limit your advertising ID in your device settings.',
+          'or limit your advertising ID in your device settings. In the European Economic Area, the UK '
+          'and Switzerland, SurJam asks for your consent with Google\'s consent form before showing ads, '
+          'and you can change your choice at any time in Settings > Privacy choices.',
     ),
     (
       'Children',
@@ -50,7 +52,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     ),
   ];
 
-  static const String lastUpdated = '8 October 2026';
+  static const String lastUpdated = '9 October 2026';
 
   @override
   Widget build(BuildContext context) {
