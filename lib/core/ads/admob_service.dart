@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'ad_consent.dart';
+import 'interstitial_pacer.dart';
+import '../recording/jam_recorder.dart';
 
 class AdMobService {
   static final AdMobService _instance = AdMobService._internal();
@@ -12,6 +14,9 @@ class AdMobService {
   static AdConsent consent = AdConsent();
   @visibleForTesting
   static Future<void> Function() startAdsSdk = () => MobileAds.instance.initialize();
+
+  /// Keeps full-screen ads occasional.
+  final InterstitialPacer pacer = InterstitialPacer();
 
   /// True once consent allows ads and the SDK has started. Banners wait for this.
   final ValueNotifier<bool> adsReady = ValueNotifier(false);
@@ -35,6 +40,7 @@ class AdMobService {
   // SurJam's own AdMob IDs (Android app). They are public: every installed copy contains them.
   // The App ID itself is in android/app/src/main/AndroidManifest.xml.
   static const String _androidBannerId = 'ca-app-pub-3608911664324057/7525052556';
+  static const String _androidInterstitialId = 'ca-app-pub-3608911664324057/9604420982';
 
   // Google's sample ad units: always filled with test ads, never paid. Used in debug builds,
   // because viewing or clicking your own real ads gets AdMob accounts suspended.
@@ -58,15 +64,14 @@ class AdMobService {
         _ => '',
       };
 
-  // No real interstitial or rewarded units exist yet (neither format is shown), so release
-  // builds request none. Create units in AdMob before using them.
-  static String get interstitialAdUnitId => !useTestAds
-      ? ''
-      : switch (defaultTargetPlatform) {
-          TargetPlatform.android => _testInterstitialAndroid,
-          TargetPlatform.iOS => _testInterstitialIos,
-          _ => '',
-        };
+  /// Full-screen ad shown occasionally when leaving an instrument (see [InterstitialPacer]).
+  static String get interstitialAdUnitId => switch (defaultTargetPlatform) {
+        TargetPlatform.android => useTestAds ? _testInterstitialAndroid : _androidInterstitialId,
+        TargetPlatform.iOS => useTestAds ? _testInterstitialIos : '',
+        _ => '',
+      };
+
+  // No real rewarded unit exists yet (the format is not used), so release builds request none.
 
   static String get rewardedAdUnitId => !useTestAds
       ? ''
@@ -116,8 +121,7 @@ class AdMobService {
       await startAdsSdk();
       _isInitialized = true;
       adsReady.value = true;
-      // Interstitials are not shown anywhere yet; preloading one would only waste requests
-      // and lower the show rate AdMob reports. Call preloadInterstitial() when they are used.
+      preloadInterstitial();
     } catch (e) {
       debugPrint('AdMob initialization handled: $e');
     }
@@ -131,26 +135,46 @@ class AdMobService {
     }
   }
 
+  bool _interstitialLoading = false;
+
   void preloadInterstitial() {
-    if (!_isInitialized || interstitialAdUnitId.isEmpty) return;
+    // One request at a time: breaks can come faster than an ad loads.
+    if (!_isInitialized || interstitialAdUnitId.isEmpty || _interstitialLoading || _interstitialAd != null) return;
+    _interstitialLoading = true;
 
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          _interstitialLoading = false;
           _interstitialAd = ad;
         },
         onAdFailedToLoad: (error) {
+          _interstitialLoading = false;
           _interstitialAd = null;
         },
       ),
     );
   }
 
+  bool get mayShowInterstitialNow => adsReady.value && !JamRecorder.instance.isRecording && pacer.mayShowNow;
+
+  /// Called at natural breaks (leaving an instrument screen). Shows the preloaded full-screen
+  /// ad only if consent allows ads, nothing is being recorded, and the pacer agrees.
+  void maybeShowInterstitialAtBreak() {
+    if (!mayShowInterstitialNow) return;
+    if (_interstitialAd == null) {
+      preloadInterstitial();
+      return;
+    }
+    showInterstitialIfReady();
+  }
+
   void showInterstitialIfReady() {
     if (_interstitialAd != null) {
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (ad) => pacer.recordShown(),
         onAdDismissedFullScreenContent: (ad) {
           ad.dispose();
           _interstitialAd = null;

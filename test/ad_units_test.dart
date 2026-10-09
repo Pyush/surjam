@@ -33,10 +33,10 @@ void main() {
     AdMobService.useTestAds = false;
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     expect(AdMobService.bannerAdUnitId, isEmpty); // no iOS app in AdMob yet
+    expect(AdMobService.interstitialAdUnitId, isEmpty); // iOS: no AdMob app yet
     for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
       debugDefaultTargetPlatformOverride = platform;
-      expect(AdMobService.interstitialAdUnitId, isEmpty);
-      expect(AdMobService.rewardedAdUnitId, isEmpty);
+      expect(AdMobService.rewardedAdUnitId, isEmpty); // no rewarded unit created
     }
   });
 

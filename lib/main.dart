@@ -12,6 +12,7 @@ import 'core/lifecycle/playback_guard.dart';
 import 'core/progress/practice_tracker.dart';
 import 'features/piano/providers/piano_provider.dart';
 import 'features/home/screens/home_screen.dart';
+import 'shared/navigation/instrument_route.dart';
 
 
 void main() async {
@@ -74,6 +75,8 @@ class _SurJamAppState extends State<SurJamApp> {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         home: const HomeScreen(),
+        // Leaving an instrument is a natural break for an occasional full-screen ad.
+        navigatorObservers: [InstrumentBreakObserver()],
       ),
     );
   }

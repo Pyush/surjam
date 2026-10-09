@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../shared/widgets/banner_ad_widget.dart';
 import '../../../shared/widgets/lesson_stars.dart';
+import '../../../shared/navigation/instrument_route.dart';
 
 class ExerciseListScreen extends StatefulWidget {
   const ExerciseListScreen({super.key});
@@ -207,7 +208,7 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                         );
                         await Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const PianoScreen()),
+                          instrumentRoute(const PianoScreen()),
                         );
                         // Show any new high score earned on the piano screen.
                         if (mounted) setState(() {});
@@ -289,8 +290,8 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
             onTap: () async {
               await Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => lesson.instrument == PracticeLesson.guitar
+                instrumentRoute(
+                  lesson.instrument == PracticeLesson.guitar
                       ? GuitarScreen(practice: (id: lesson.id, chords: lesson.targets))
                       : TablaScreen(practice: (id: lesson.id, bols: lesson.targets)),
                 ),

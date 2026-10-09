@@ -23,6 +23,7 @@ import '../../shehnai/screens/shehnai_screen.dart';
 import '../../veena/screens/veena_screen.dart';
 import '../../progress/screens/progress_screen.dart';
 import '../../../core/progress/practice_tracker.dart';
+import '../../../shared/navigation/instrument_route.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/banner_ad_widget.dart';
 
@@ -49,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Multitouch Keyboard, Scales, Chords & Learn Mode',
                     gradient: const [Color(0xFFFF9F1C), Color(0xFFFFBF69)],
                     icon: Icons.piano_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PianoScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const PianoScreen())),
                   ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -60,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '3D Dayan & Bayan drums, 5 Taals & Step Sequencer',
                     gradient: const [Color(0xFFFB8500), Color(0xFFFFB703)],
                     icon: Icons.adjust_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TablaScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const TablaScreen())),
                   ).animate().fadeIn(duration: 250.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -71,7 +72,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Dual-Head Percussion, Garba, Bhangra & Bhajan Beats',
                     gradient: const [Color(0xFFD35400), Color(0xFFE67E22)],
                     icon: Icons.graphic_eq_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DholakScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const DholakScreen())),
                   ).animate().fadeIn(duration: 275.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -82,7 +83,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '6-String Fretboard, 45+ Chords & Auto Strum',
                     gradient: const [Color(0xFFE53170), Color(0xFFC70039)],
                     icon: Icons.music_note_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GuitarScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const GuitarScreen())),
                   ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -93,7 +94,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '4-String G-C-E-A Nylon Fretboard & Chords',
                     gradient: const [Color(0xFF8B5A2B), Color(0xFFD4A373)],
                     icon: Icons.music_note_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UkuleleScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const UkuleleScreen())),
                   ).animate().fadeIn(duration: 325.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -104,7 +105,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '2-Octave Wooden Mallet Bars, English & Sargam Labels',
                     gradient: const [Color(0xFF7F5AF0), Color(0xFFE63946)],
                     icon: Icons.graphic_eq_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const XylophoneScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const XylophoneScreen())),
                   ).animate().fadeIn(duration: 340.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -115,7 +116,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '16 pads with Classic, Hip-Hop & EDM Drum Kits',
                     gradient: const [Color(0xFF00E5FF), Color(0xFF0083B0)],
                     icon: Icons.grid_view_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DrumPadScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const DrumPadScreen())),
                   ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -126,7 +127,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '8-Track Live Loop Matrix, BPM Sync & Low-Pass FX Filter',
                     gradient: const [Color(0xFFB5179E), Color(0xFF7F5AF0)],
                     icon: Icons.tune_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DJLooperScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const DJLooperScreen())),
                   ).animate().fadeIn(duration: 375.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -137,7 +138,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Wooden cabinet, Sargam notes & Sa/Pa Drone keys',
                     gradient: const [Color(0xFFD4A373), Color(0xFF8B5E3C)],
                     icon: Icons.radio_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HarmoniumScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const HarmoniumScreen())),
                   ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -148,7 +149,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '14 Curved Pardas, Meend Pitch Bend, Chikari & Tarab',
                     gradient: const [Color(0xFFB8860B), Color(0xFF7A4A28)],
                     icon: Icons.graphic_eq_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SitarScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const SitarScreen())),
                   ).animate().fadeIn(duration: 425.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -159,7 +160,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '6-Hole Bamboo Flute, Half-Hole Komal Swaras & Vibrato',
                     gradient: const [Color(0xFFE5B064), Color(0xFF8F5E1D)],
                     icon: Icons.air_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BansuriScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const BansuriScreen())),
                   ).animate().fadeIn(duration: 435.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -170,7 +171,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: '4-String fretless fingerboard with position tapes',
                     gradient: const [Color(0xFF7F5AF0), Color(0xFF5A3EC8)],
                     icon: Icons.graphic_eq_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ViolinScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const ViolinScreen())),
                   ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -181,7 +182,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Hammered strings in all 10 thaats, with tremolo rolls',
                     gradient: const [Color(0xFFB5651D), Color(0xFF6B3D1E)],
                     icon: Icons.blur_linear_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SantoorScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const SantoorScreen())),
                   ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -192,7 +193,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Hold to play, slide for meend, with gamak and sur drone',
                     gradient: const [Color(0xFFC0392B), Color(0xFF7B241C)],
                     icon: Icons.air_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShehnaiScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const ShehnaiScreen())),
                   ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),
@@ -203,7 +204,7 @@ class HomeScreen extends StatelessWidget {
                     subtitle: 'Plucked frets with gamaka pulls and tala strings',
                     gradient: const [Color(0xFF8E6E2E), Color(0xFF4A2C16)],
                     icon: Icons.linear_scale_rounded,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VeenaScreen())),
+                    onTap: () => Navigator.push(context, instrumentRoute(const VeenaScreen())),
                   ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0),
 
                   const SizedBox(height: 12),

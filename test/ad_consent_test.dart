@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,6 +52,14 @@ class FakeConsent extends AdConsent {
 void main() {
   late int sdkStarts;
   final ads = AdMobService();
+
+  // Starting ads preloads a full-screen ad through the plugin, which tests do not have.
+  TestWidgetsFlutterBinding.ensureInitialized();
+  // The plugin uses its own message codec, so reply at the message level with an empty success.
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(
+    'plugins.flutter.io/google_mobile_ads',
+    (message) async => const StandardMethodCodec().encodeSuccessEnvelope(null),
+  );
 
   setUp(() {
     sdkStarts = 0;
