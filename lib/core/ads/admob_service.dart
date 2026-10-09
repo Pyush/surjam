@@ -32,36 +32,49 @@ class AdMobService {
   InterstitialAd? _interstitialAd;
   RewardedAd? _rewardedAd;
 
-  // Google Standard Test Unit IDs for safety during dev & testing
-  static String get bannerAdUnitId {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'ca-app-pub-3940256099942544/6300978111'; // Android Banner Test ID
-    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return 'ca-app-pub-3940256099942544/2934735716'; // iOS Banner Test ID
-    } {
-      return '';
-    }
-  }
+  // SurJam's own AdMob IDs (Android app). They are public: every installed copy contains them.
+  // The App ID itself is in android/app/src/main/AndroidManifest.xml.
+  static const String _androidBannerId = 'ca-app-pub-3608911664324057/7525052556';
 
-  static String get interstitialAdUnitId {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'ca-app-pub-3940256099942544/1033173712'; // Android Interstitial Test ID
-    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return 'ca-app-pub-3940256099942544/4411468910'; // iOS Interstitial Test ID
-    } {
-      return '';
-    }
-  }
+  // Google's sample ad units: always filled with test ads, never paid. Used in debug builds,
+  // because viewing or clicking your own real ads gets AdMob accounts suspended.
+  static const String _testBannerAndroid = 'ca-app-pub-3940256099942544/6300978111';
+  static const String _testBannerIos = 'ca-app-pub-3940256099942544/2934735716';
+  static const String _testInterstitialAndroid = 'ca-app-pub-3940256099942544/1033173712';
+  static const String _testInterstitialIos = 'ca-app-pub-3940256099942544/4411468910';
+  static const String _testRewardedAndroid = 'ca-app-pub-3940256099942544/5224354917';
+  static const String _testRewardedIos = 'ca-app-pub-3940256099942544/1712485313';
 
-  static String get rewardedAdUnitId {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'ca-app-pub-3940256099942544/5224354917'; // Android Rewarded Test ID
-    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return 'ca-app-pub-3940256099942544/1712485313'; // iOS Rewarded Test ID
-    } {
-      return '';
-    }
-  }
+  /// Test ads everywhere except release builds. Build with `--dart-define=TEST_ADS=true` to keep
+  /// test ads in a release APK installed on your own phone.
+  @visibleForTesting
+  static bool useTestAds = !kReleaseMode || const bool.fromEnvironment('TEST_ADS');
+
+  /// The real Android banner in release builds. iOS has no AdMob app yet, so release builds
+  /// there show no banner rather than test ads.
+  static String get bannerAdUnitId => switch (defaultTargetPlatform) {
+        TargetPlatform.android => useTestAds ? _testBannerAndroid : _androidBannerId,
+        TargetPlatform.iOS => useTestAds ? _testBannerIos : '',
+        _ => '',
+      };
+
+  // No real interstitial or rewarded units exist yet (neither format is shown), so release
+  // builds request none. Create units in AdMob before using them.
+  static String get interstitialAdUnitId => !useTestAds
+      ? ''
+      : switch (defaultTargetPlatform) {
+          TargetPlatform.android => _testInterstitialAndroid,
+          TargetPlatform.iOS => _testInterstitialIos,
+          _ => '',
+        };
+
+  static String get rewardedAdUnitId => !useTestAds
+      ? ''
+      : switch (defaultTargetPlatform) {
+          TargetPlatform.android => _testRewardedAndroid,
+          TargetPlatform.iOS => _testRewardedIos,
+          _ => '',
+        };
 
   /// Gathers consent where required, then starts ads. Called once the first frame is up,
   /// because the consent form is shown over the app.

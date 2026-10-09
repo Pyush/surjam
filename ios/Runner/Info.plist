@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Google's sample iOS AdMob App ID, so the ads SDK starts without crashing. Replace it with
+	     SurJam's own iOS App ID after adding an iOS app in AdMob. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>SurJam listens through the microphone so the tuner can show the pitch of your instrument or voice. Audio is analysed on your device and never recorded or sent anywhere.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
